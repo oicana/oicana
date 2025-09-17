@@ -1,7 +1,7 @@
-import init from "@oicana/browser-wasm";
+import init from '@oicana/browser-wasm';
 
-export * from "./Template"
-export * from "./inputs"
+export * from './inputs';
+export * from './Template';
 
 const initialized: Set<string> = new Set();
 
@@ -10,7 +10,7 @@ const initialized: Set<string> = new Set();
  * @param wasmPath URL from which to load the WASM module
  */
 export async function initialize(wasmPath: string): Promise<void> {
-    if (initialized.has(wasmPath)) return;
-    await init(wasmPath);
-    initialized.add(wasmPath);
+  if (initialized.has(wasmPath)) return;
+  await init(wasmPath);
+  initialized.add(wasmPath);
 }

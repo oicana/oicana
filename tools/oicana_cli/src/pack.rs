@@ -19,7 +19,14 @@ pub struct PackArgs {
     #[clap(flatten)]
     target: TargetArgs,
     #[clap(short, long, help = "Output directory", default_value = ".")]
-    output: String,
+    out_dir: String,
+    #[clap(
+        short,
+        long,
+        help = "Name template for the artifacts",
+        default_value = "{template}-{version}.zip"
+    )]
+    name: String,
 }
 
 #[rustfmt::skip]
@@ -34,7 +41,7 @@ pub const PACK_AFTER_HELP: &str = color_print::cstr!("\
 pub fn pack(args: PackArgs) -> anyhow::Result<()> {
     // Todo: read `exclude` from manifest and default to exclude zip files and the output dir to better support single dir templates
     let templates = args.target.get_targets()?;
-    let out = Path::new(&args.output);
+    let out = Path::new(&args.out_dir);
     let packages = package_data_dir().context("Failed to find data directory for packages")?;
 
     for template in templates {
@@ -43,10 +50,11 @@ pub fn pack(args: PackArgs) -> anyhow::Result<()> {
 
         let mut files = NativeTemplate::new(&template.path, packages.clone());
 
-        let out_file_path = out.join(format!(
-            "{}-{}.zip",
-            template.manifest.package.name, template.manifest.package.version
-        ));
+        let out_file_path = out.join(
+            args.name
+                .replace("{template}", &template.manifest.package.name)
+                .replace("{version}", &template.manifest.package.version.to_string()),
+        );
 
         update_dependencies(&template.path, &mut files)?;
 

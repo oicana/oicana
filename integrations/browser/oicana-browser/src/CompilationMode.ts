@@ -1,4 +1,4 @@
 export enum CompilationMode {
-  Development = "development",
-  Production = "production"
+  Development = 'development',
+  Production = 'production',
 }

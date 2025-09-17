@@ -12,7 +12,7 @@ using Oicana.Template;
 
 public class E2ETests
 {
-    private readonly byte[] _templateFile = File.ReadAllBytes("../../../../../../e2e_test_template/oicana-e2e-test-0.1.0.zip");
+    private readonly byte[] _templateFile = File.ReadAllBytes("../../../../../../e2e_test_template/oicana-e2e-test-x.y.z.zip");
 
     public E2ETests()
     {

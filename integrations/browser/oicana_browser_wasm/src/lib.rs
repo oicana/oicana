@@ -248,7 +248,7 @@ struct BlobWithMetadata {
 
 fn add_blobs(inputs: &mut TemplateInputs, blobs: JsValue) -> Result<(), String> {
     let blobs: HashMap<String, BlobWithMetadata> = from_value(blobs)
-        .map_err(|error| format!("Failed to deserialize from JavaScript value: {error:?}"))?;
+        .map_err(|error| format!("Failed to deserialize HashMap<String, BlobWithMetadata> from JavaScript value: {error:?}"))?;
     for (key, value) in blobs {
         let mut blob = Blob::from(Bytes::new(value.bytes.to_vec()));
         blob.metadata = Deserialize::deserialize(value.meta)
@@ -260,10 +260,11 @@ fn add_blobs(inputs: &mut TemplateInputs, blobs: JsValue) -> Result<(), String> 
 }
 
 fn add_json_inputs(inputs: &mut TemplateInputs, json_inputs: JsValue) -> Result<(), String> {
-    let mut json_inputs: Vec<(String, String)> = from_value(json_inputs)
-        .map_err(|error| format!("Failed to deserialize from JavaScript value: {error:?}"))?;
+    let json_inputs: HashMap<String, String> = from_value(json_inputs).map_err(|error| {
+        format!("Failed to deserialize HashMap<String, String> from JavaScript value: {error:?}")
+    })?;
     json_inputs
-        .drain(..)
+        .into_iter()
         .map(|(key, value)| JsonInput::new(key, value))
         .for_each(|input| {
             inputs.with_input(input);

@@ -120,14 +120,17 @@ jobs:
           tool: wasm-pack
       - name: build browser wasm
         run: wasm-pack build --release --target web --scope oicana integrations/browser/oicana_browser_wasm
-      - name: package browser wasm
-        run: npm pack
+      - name: rename package
+        run: jq '.name = "@oicana/browser-wasm"' package.json > tmp.json && mv tmp.json package.json
         working-directory: ./integrations/browser/oicana_browser_wasm/pkg
       - name: Upload browser-wasm
         uses: actions/upload-artifact@v4
         with:
           name: browser-wasm
-          path: ./integrations/browser/oicana_browser_wasm/pkg/oicana-oicana-browser-wasm-*.tgz
+          path: |
+            ./integrations/browser/oicana_browser_wasm/pkg/oicana_browser_wasm**
+            ./integrations/browser/oicana_browser_wasm/pkg/package.json
+            ./integrations/browser/oicana_browser_wasm/pkg/README.md
 
   build-tools:
     runs-on: ubuntu-latest
@@ -200,15 +203,20 @@ jobs:
         run: oicana test
         working-directory: ./e2e_test_template
       - name: pack e2e template
-        run: oicana pack
+        run: oicana pack -n {template}-x.y.z.zip
         working-directory: ./e2e_test_template
       - name: install browser-wasm
         uses: actions/download-artifact@v4
         with:
           name: browser-wasm
           path: ./integrations/browser/oicana_browser_wasm/pkg
+      - name: Enable npm link in browser-wasm
+        run: npm link
+        working-directory: ./integrations/browser/oicana_browser_wasm/pkg
       - name: install browser integration
-        run: npm i
+        run: |
+          npm i
+          npm link @oicana/browser-wasm
         working-directory: ./integrations/browser/oicana-browser
       - name: test browser integration
         run: npm run test
@@ -244,7 +252,7 @@ jobs:
         run: oicana test
         working-directory: ./e2e_test_template
       - name: pack e2e template
-        run: oicana pack
+        run: oicana pack -n {template}-x.y.z.zip
         working-directory: ./e2e_test_template
       - name: install csharp lib
         uses: actions/download-artifact@v4

@@ -1,9 +1,9 @@
-import {JsonInputDefinition} from "./JsonInput";
-import {BlobInputDefinition, BlobWithMetadata} from "./BlobInput";
+import { BlobInputDefinition, BlobWithMetadata } from './BlobInput';
+import { JsonInputDefinition } from './JsonInput';
 
-export {JsonInputDefinition, BlobInputDefinition, BlobWithMetadata};
+export { JsonInputDefinition, BlobInputDefinition, BlobWithMetadata };
 
 export interface Inputs {
-    json: JsonInputDefinition[],
-    blob: BlobInputDefinition[]
+  json: JsonInputDefinition[];
+  blob: BlobInputDefinition[];
 }

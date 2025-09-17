@@ -1,5 +1,5 @@
 export interface JsonInputDefinition {
-    key: string,
-    default: string,
-    schema?: string,
+  key: string;
+  default: string;
+  schema?: string;
 }

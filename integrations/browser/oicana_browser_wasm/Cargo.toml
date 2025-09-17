@@ -37,5 +37,8 @@ serde_json = { workspace = true }
 [lints]
 workspace = true
 
+[package.metadata.wasm-pack.profile.debug]
+wasm-opt = false
+
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = ["-O", "-all"] # Todo: is all really the right call here? --enable-bulk-memory is not enough
