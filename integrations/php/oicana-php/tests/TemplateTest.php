@@ -143,10 +143,11 @@ test('template provides input definitions', function () {
     $template = new Template($templateBytes);
 
     try {
-        $inputs = $template->inputs();
+        $inputs = $template->manifest()->oicana->inputs;
 
-        expect($inputs)->toBeArray();
-        expect($inputs)->toHaveKey('inputs');
+        expect($inputs)->toBeArray()
+            ->and(array_map(fn ($input) => $input->key(), $inputs))
+            ->toContain('development-blob');
     } finally {
         $template->cleanup();
     }

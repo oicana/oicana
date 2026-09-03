@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "oicana-native"
-version = "0.9.0rc1"
+version = "0.9.0rc2"
 description = "Native bindings for Oicana. Install the `oicana` package instead."
 readme = "README.md"
 requires-python = ">=3.9"

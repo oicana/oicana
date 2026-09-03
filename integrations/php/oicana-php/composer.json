@@ -3,7 +3,7 @@
   "description": "Generate typeset PDFs in PHP from Typst templates, in process. No headless browser, no per-document fees.",
   "type": "library",
   "license": "PolyForm-Noncommercial-1.0.0",
-  "version": "0.9.0-rc.1",
+  "version": "0.9.0-rc.2",
   "keywords": [
     "oicana",
     "typst",
@@ -26,7 +26,7 @@
   ],
   "require": {
     "php": "^8.3",
-    "oicana/installer": "^0.9.0-rc.1"
+    "oicana/installer": "^0.9.0-rc.2"
   },
   "suggest": {
     "ext-oicana": "Required for PDF generation. Automatically downloaded by oicana-installer"

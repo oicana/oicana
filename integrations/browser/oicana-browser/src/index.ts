@@ -10,13 +10,14 @@ export {
   register_fonts as registerFonts,
   set_log_level as setLogLevel,
 } from '@oicana/browser-wasm';
+export * from './BlobInput.js';
 export * from './CompilationMode.js';
 export * from './CompiledDocument.js';
 export * from './ExportFormat.js';
 export * from './ExportOnceResult.js';
-export * from './inputs/index.js';
 export * from './PageRange.js';
 export * from './Template.js';
+export * from './TemplateManifest.js';
 export * from './ZipLimits.js';
 
 /** Color mode for compilation diagnostics. */

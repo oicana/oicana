@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Oicana;
 
 use Oicana\Inputs\BlobInput;
+use Oicana\Manifest\TemplateManifest;
 
 /**
  * Oicana template for PDF generation.
@@ -268,17 +269,18 @@ class Template
     }
 
     /**
-     * Get input definitions from template manifest.
+     * Get the template's manifest.
      *
-     * Returns the input schema defined in the template's typst.toml file.
+     * Returns the Typst package section and the Oicana configuration of the
+     * template, including its input definitions.
      *
-     * @return array<string, mixed> Input definitions
+     * @return TemplateManifest The template manifest
      * @throws \Exception If template is not registered
      */
-    public function inputs(): array
+    public function manifest(): TemplateManifest
     {
-        $inputsJson = \OicanaInternal\inputs($this->templateId);
-        return json_decode($inputsJson, true);
+        $manifestJson = \OicanaInternal\manifest($this->templateId);
+        return TemplateManifest::fromArray(json_decode($manifestJson, true));
     }
 
     /**

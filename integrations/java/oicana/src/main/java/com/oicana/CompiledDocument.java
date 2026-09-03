@@ -1,11 +1,12 @@
 package com.oicana;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * A compiled document kept in memory so it can be exported on demand without re-compiling.
@@ -21,12 +22,6 @@ import java.util.regex.Pattern;
  * }</pre>
  */
 public class CompiledDocument implements AutoCloseable {
-
-    // The native document_pages output is a JSON array of {"width": <n>, "height": <n>} objects in
-    // field order. The Java integration intentionally has no JSON dependency, so the fixed shape is
-    // parsed directly.
-    private static final Pattern PAGE_PATTERN = Pattern.compile(
-            "\"width\"\\s*:\\s*([-+0-9.eE]+)\\s*,\\s*\"height\"\\s*:\\s*([-+0-9.eE]+)");
 
     private volatile String documentId;
     private final List<PageSize> pages;
@@ -196,11 +191,14 @@ public class CompiledDocument implements AutoCloseable {
 
     private static List<PageSize> parsePageSizes(String json) {
         List<PageSize> sizes = new ArrayList<>();
-        Matcher matcher = PAGE_PATTERN.matcher(json);
-        while (matcher.find()) {
-            double width = Double.parseDouble(matcher.group(1));
-            double height = Double.parseDouble(matcher.group(2));
-            sizes.add(new PageSize(width, height));
+        try {
+            for (JsonElement page : JsonParser.parseString(json).getAsJsonArray()) {
+                JsonObject size = page.getAsJsonObject();
+                sizes.add(new PageSize(size.get("width").getAsDouble(),
+                        size.get("height").getAsDouble()));
+            }
+        } catch (RuntimeException error) {
+            throw new OicanaException("Failed to read the page sizes of the document", error);
         }
         return Collections.unmodifiableList(sizes);
     }

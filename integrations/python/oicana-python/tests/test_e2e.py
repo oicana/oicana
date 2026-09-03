@@ -6,7 +6,14 @@ from pathlib import Path
 
 import pytest
 
-from oicana import BlobInput, CompilationMode, PageRange, Template
+from oicana import (
+    BlobInput,
+    BlobInputDefinition,
+    CompilationMode,
+    JsonInputDefinition,
+    PageRange,
+    Template,
+)
 
 
 def asset(file: str) -> bytes:
@@ -112,6 +119,40 @@ def test_all_inputs() -> None:
         output_dir = Path(__file__).parent / "testOutput"
         output_dir.mkdir(exist_ok=True)
         (output_dir / "all-inputs.png").write_bytes(image)
+    finally:
+        template.cleanup()
+
+
+def test_manifest() -> None:
+    """The typed manifest carries the package section and the Oicana config."""
+    template = Template(template_file())
+
+    try:
+        manifest = template.manifest()
+
+        assert manifest.package.name == "oicana-e2e-test"
+        assert manifest.package.version == "0.1.0"
+        assert manifest.oicana.manifest_version == 1
+        assert manifest.oicana.validate_json_inputs_by_default
+        assert manifest.oicana.export.pdf.standards == ["a-3b"]
+        assert manifest.oicana.fonts.require == []
+
+        json_input = next(
+            input for input in manifest.oicana.inputs if input.key == "development-json"
+        )
+        assert isinstance(json_input, JsonInputDefinition)
+        assert json_input.schema == "input.schema.json"
+        assert json_input.development == "development.json"
+        assert json_input.default is None
+        assert json_input.validate
+
+        blob_input = next(input for input in manifest.oicana.inputs if input.key == "default-blob")
+        assert isinstance(blob_input, BlobInputDefinition)
+        assert blob_input.default is not None
+        assert blob_input.default.file == "default.txt"
+        assert blob_input.default.meta is not None
+        assert blob_input.default.meta["image_format"] == "png"
+        assert blob_input.development is None
     finally:
         template.cleanup()
 

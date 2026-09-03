@@ -180,12 +180,12 @@ export declare function getSource(template: string, file: string): string
 export declare function getWarnings(documentId: string): string | null
 
 /**
- * Load all input definitions for the given template.
+ * Load the manifest of the given template.
  *
  * Calling this method requires a previous call to [`register_template`] with the same template
  * identifier.
  */
-export declare function inputs(template: string): string
+export declare function manifest(template: string): string
 
 /** A font face made available to templates by the host. */
 export interface RegisteredFont {

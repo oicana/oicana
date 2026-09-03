@@ -17,7 +17,7 @@ pub struct BlobInputDefinition {
     ///
     /// In development mode, [`Self::development`] is preferred.
     pub default: Option<FallbackBlobInput>,
-    /// Value for this input in development mode.
+    /// Value for this input in development mode, when no value is supplied.
     pub development: Option<FallbackBlobInput>,
 }
 

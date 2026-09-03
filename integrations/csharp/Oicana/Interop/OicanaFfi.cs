@@ -239,14 +239,14 @@ internal static class OicanaFfi
     }
 
     /// <summary>
-    /// Get input definitions from the template manifest.
+    /// Get the manifest of the template.
     /// </summary>
     /// <param name="templateId">Identifier of the template.</param>
-    /// <exception cref="OicanaException">If the template is not registered or inputs cannot be retrieved.</exception>
-    /// <returns>JSON string containing input definitions.</returns>
-    public static string GetInputs(string templateId)
+    /// <exception cref="OicanaException">If the template is not registered or the manifest cannot be retrieved.</exception>
+    /// <returns>JSON string containing the manifest.</returns>
+    public static string GetManifest(string templateId)
     {
-        var buffer = OicanaFfiInternal.inputs(templateId);
+        var buffer = OicanaFfiInternal.manifest(templateId);
         return HandleStringBuffer(buffer);
     }
 
@@ -465,7 +465,7 @@ internal static class OicanaFfi
             IntPtr dataPtr = blobHandle.AddrOfPinnedObject();
             blobHandles.Add(blobHandle);
 
-            var blobInput = new FfiBlobInput() { key = key, data = new Buffer() { data = dataPtr, error = false, len = (uint)blob.Data.Length }, meta = blob.Meta?.ToString() ?? "{}" };
+            var blobInput = new FfiBlobInput() { key = key, data = new Buffer() { data = dataPtr, error = false, len = (uint)blob.Data.Length }, meta = blob.Metadata?.ToString() ?? "{}" };
             Marshal.StructureToPtr(blobInput, blobsInputsPtr + i * Marshal.SizeOf<FfiBlobInput>(), false);
             i++;
         }

@@ -1,6 +1,6 @@
 {
   "name": "@oicana/node-native",
-  "version": "0.9.0-rc.1",
+  "version": "0.9.0-rc.2",
   "description": "Native binary for @oicana/node. Install @oicana/node instead.",
   "main": "index.js",
   "repository": {

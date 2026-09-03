@@ -78,12 +78,12 @@ namespace Oicana.Interop
         [DllImport(NativeLib, CallingConvention = CallingConvention.Cdecl, EntryPoint = "unsafe_export_document")]
         public static extern Buffer unsafe_export_document([MarshalAs(UnmanagedType.LPUTF8Str)] string document_id, ExportOptions export_options, FfiPageRange page_range);
 
-        /// Load the inputs of the given template.
+        /// Load the manifest of the given template.
         ///
         /// This method requires a previous successful call to [`unsafe_register_template`].
         /// Check if the returned buffer is an error before interpreting the content.
-        [DllImport(NativeLib, CallingConvention = CallingConvention.Cdecl, EntryPoint = "inputs")]
-        public static extern Buffer inputs([MarshalAs(UnmanagedType.LPUTF8Str)] string template);
+        [DllImport(NativeLib, CallingConvention = CallingConvention.Cdecl, EntryPoint = "manifest")]
+        public static extern Buffer manifest([MarshalAs(UnmanagedType.LPUTF8Str)] string template);
 
         /// Return the sizes (in points) of every page of a compiled document as a JSON
         /// array of `{ "width": number, "height": number }`.

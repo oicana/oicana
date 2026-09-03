@@ -9,18 +9,15 @@ import {
   remove_document,
   remove_world,
   set_validate_inputs,
-  inputs as wasmInputs,
+  manifest as wasmManifest,
 } from '@oicana/browser-wasm';
+import type { BlobInput } from './BlobInput.js';
 import { CompilationMode } from './CompilationMode.js';
 import { CompiledDocument } from './CompiledDocument.js';
 import { type ExportFormat, Pdf, Png, Svg } from './ExportFormat.js';
 import type { ExportOnceResult } from './ExportOnceResult.js';
-import type {
-  BlobInputDefinition,
-  BlobWithMetadata,
-  JsonInputDefinition,
-} from './inputs/index.js';
 import type { PageRange } from './PageRange.js';
+import type { TemplateManifest } from './TemplateManifest.js';
 import type { ZipLimits } from './ZipLimits.js';
 
 /**
@@ -47,7 +44,7 @@ export class Template implements Disposable {
   public constructor(
     template: Uint8Array,
     jsonInputs: Map<string, string>,
-    blobInputs: Map<string, BlobWithMetadata>,
+    blobInputs: Map<string, BlobInput>,
   );
 
   /**
@@ -61,7 +58,7 @@ export class Template implements Disposable {
   public constructor(
     template: Uint8Array,
     jsonInputs?: Map<string, string>,
-    blobInputs?: Map<string, BlobWithMetadata>,
+    blobInputs?: Map<string, BlobInput>,
     compilationOptions?: CompilationMode,
     limits?: ZipLimits,
   ) {
@@ -95,7 +92,7 @@ export class Template implements Disposable {
   public static exportOnce(
     template: Uint8Array,
     jsonInputs?: Map<string, string>,
-    blobInputs?: Map<string, BlobWithMetadata>,
+    blobInputs?: Map<string, BlobInput>,
     exportFormat?: ExportFormat,
     compilationOptions?: CompilationMode,
     pages?: PageRange,
@@ -127,7 +124,7 @@ export class Template implements Disposable {
    */
   public export(
     jsonInputs: Map<string, string>,
-    blobInputs: Map<string, BlobWithMetadata>,
+    blobInputs: Map<string, BlobInput>,
   ): Uint8Array<ArrayBuffer>;
 
   /**
@@ -138,7 +135,7 @@ export class Template implements Disposable {
    */
   public export(
     jsonInputs: Map<string, string>,
-    blobInputs: Map<string, BlobWithMetadata>,
+    blobInputs: Map<string, BlobInput>,
     exportFormat: ExportFormat,
   ): Uint8Array<ArrayBuffer>;
 
@@ -151,7 +148,7 @@ export class Template implements Disposable {
    */
   public export(
     jsonInputs: Map<string, string>,
-    blobInputs: Map<string, BlobWithMetadata>,
+    blobInputs: Map<string, BlobInput>,
     exportFormat: ExportFormat,
     compilationOptions: CompilationMode,
   ): Uint8Array<ArrayBuffer>;
@@ -166,7 +163,7 @@ export class Template implements Disposable {
    */
   public export(
     jsonInputs: Map<string, string>,
-    blobInputs: Map<string, BlobWithMetadata>,
+    blobInputs: Map<string, BlobInput>,
     exportFormat: ExportFormat,
     compilationOptions: CompilationMode,
     pages: PageRange,
@@ -187,7 +184,7 @@ export class Template implements Disposable {
    */
   public export(
     jsonInputs?: Map<string, string>,
-    blobInputs?: Map<string, BlobWithMetadata>,
+    blobInputs?: Map<string, BlobInput>,
     exportFormat?: ExportFormat,
     compilationOptions?: CompilationMode,
     pages?: PageRange,
@@ -212,7 +209,7 @@ export class Template implements Disposable {
    */
   public exportPdf(
     jsonInputs?: Map<string, string>,
-    blobInputs?: Map<string, BlobWithMetadata>,
+    blobInputs?: Map<string, BlobInput>,
     compilationOptions?: CompilationMode,
     pages?: PageRange,
   ): Uint8Array {
@@ -237,7 +234,7 @@ export class Template implements Disposable {
    */
   public exportPng(
     jsonInputs?: Map<string, string>,
-    blobInputs?: Map<string, BlobWithMetadata>,
+    blobInputs?: Map<string, BlobInput>,
     compilationOptions?: CompilationMode,
     pixelsPerPt = 1.0,
     pages?: PageRange,
@@ -261,7 +258,7 @@ export class Template implements Disposable {
    */
   public exportSvg(
     jsonInputs?: Map<string, string>,
-    blobInputs?: Map<string, BlobWithMetadata>,
+    blobInputs?: Map<string, BlobInput>,
     compilationOptions?: CompilationMode,
     pages?: PageRange,
   ): Uint8Array {
@@ -277,7 +274,7 @@ export class Template implements Disposable {
   private exportWith(
     format: ExportFormat,
     jsonInputs?: Map<string, string>,
-    blobInputs?: Map<string, BlobWithMetadata>,
+    blobInputs?: Map<string, BlobInput>,
     compilationOptions?: CompilationMode,
     pages?: PageRange,
   ): Uint8Array {
@@ -306,7 +303,7 @@ export class Template implements Disposable {
    */
   public compile(
     jsonInputs?: Map<string, string>,
-    blobInputs?: Map<string, BlobWithMetadata>,
+    blobInputs?: Map<string, BlobInput>,
     compilationOptions?: CompilationMode,
   ): CompiledDocument {
     const documentId = this.compileToDocumentId(
@@ -319,7 +316,7 @@ export class Template implements Disposable {
 
   private compileToDocumentId(
     jsonInputs?: Map<string, string>,
-    blobInputs?: Map<string, BlobWithMetadata>,
+    blobInputs?: Map<string, BlobInput>,
     compilationOptions?: CompilationMode,
   ): string {
     const documentId = compile_template(
@@ -341,10 +338,13 @@ export class Template implements Disposable {
   }
 
   /**
-   * Gather all input definitions of this template
+   * The template's manifest.
+   *
+   * The Typst package section and Oicana
+   * configuration with the input definitions.
    */
-  public inputs(): { inputs: (BlobInputDefinition | JsonInputDefinition)[] } {
-    return JSON.parse(wasmInputs(this.template));
+  public manifest(): TemplateManifest {
+    return JSON.parse(wasmManifest(this.template));
   }
 
   /**

@@ -39,6 +39,9 @@ use oicana_world::world::OicanaWorld;
 /// Diagnostic-output coloring (re-exported from `oicana_world`).
 pub use oicana_world::diagnostics::DiagnosticColor;
 
+/// The template manifest
+pub mod manifest;
+
 /// Compilation mode passed in from the calling language.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CompilationMode {
@@ -152,9 +155,9 @@ pub enum FfiError {
         error: String,
     },
 
-    /// Serializing the template's input definitions to JSON failed.
-    #[error("Failed to serialize inputs: {0}")]
-    InputsSerialization(String),
+    /// Serializing the template's manifest to JSON failed.
+    #[error("Failed to serialize the manifest: {0}")]
+    ManifestSerialization(String),
 
     /// Serializing the document's page sizes to JSON failed.
     #[error("Failed to serialize page sizes: {0}")]
@@ -665,12 +668,13 @@ pub fn document_pages(document_id: &str) -> Result<String, FfiError> {
         .map_err(|error| FfiError::PageSizesSerialization(error.to_string()))
 }
 
-/// Return the template's input definitions serialized as a JSON string.
-pub fn inputs(template_id: &str) -> Result<String, FfiError> {
+/// Return the template's manifest serialized as a JSON string.
+pub fn manifest(template_id: &str) -> Result<String, FfiError> {
     let shared = get_world(template_id)?;
     let world = read_world(&shared);
-    serde_json::to_string(&world.manifest().tool.oicana)
-        .map_err(|error| FfiError::InputsSerialization(error.to_string()))
+    let manifest = manifest::Manifest::from(world.manifest());
+    serde_json::to_string(&manifest)
+        .map_err(|error| FfiError::ManifestSerialization(error.to_string()))
 }
 
 /// Return the source text of a file inside the template.
@@ -978,6 +982,76 @@ mod tests {
     }
 
     #[test]
+    fn manifest_is_serialized_in_the_documented_shape() {
+        let files = std::fs::read("../../assets/templates/invoice-0.1.0.zip")
+            .expect("read test template fixture");
+        let template_id = format!("manifest-shape-{}", Uuid::new_v4());
+        let document_id = register_template(
+            &template_id,
+            &files,
+            HashMap::new(),
+            HashMap::new(),
+            CompilationMode::Development,
+            None,
+        )
+        .expect("register template");
+        remove_document(&document_id);
+
+        let serialized = manifest(&template_id).expect("serialize manifest");
+        remove_world(&template_id);
+
+        let parsed: serde_json::Value =
+            serde_json::from_str(&serialized).expect("manifest is valid JSON");
+
+        // Every integration declares this shape in its own language, so a
+        // change here has to be mirrored in all of them.
+        assert_eq!(
+            parsed,
+            serde_json::json!({
+                "package": {
+                    "name": "invoice",
+                    "version": "0.1.0",
+                    "entrypoint": "main.typ",
+                    "authors": [],
+                    "license": null,
+                    "description": "Invoice template with customizable items and billing details.",
+                    "homepage": null,
+                    "repository": null
+                },
+                "oicana": {
+                    "manifestVersion": 1,
+                    "inputs": [
+                        {
+                            "type": "json",
+                            "key": "invoice",
+                            "required": true,
+                            "default": "invoice.json",
+                            "development": null,
+                            "schema": "invoice.schema.json",
+                            "validate": true
+                        },
+                        {
+                            "type": "blob",
+                            "key": "banner",
+                            "required": true,
+                            "default": {
+                                "file": "oicana.png",
+                                "meta": { "image_format": "png" }
+                            },
+                            "development": null
+                        }
+                    ],
+                    "validateJsonInputsByDefault": true,
+                    "export": {
+                        "pdf": { "standards": ["a-3b"], "tagged": true }
+                    },
+                    "fonts": { "require": [] }
+                }
+            })
+        );
+    }
+
+    #[test]
     fn registering_a_template_from_a_newer_oicana_fails() {
         let files = std::fs::read("../../assets/templates/future-manifest-0.1.0.zip")
             .expect("read test template fixture");
@@ -1092,7 +1166,7 @@ mod tests {
                 CompilationMode::Development,
             )
             .expect("compile template");
-            inputs(&other_template).expect("inputs");
+            manifest(&other_template).expect("manifest");
             let pdf = export_document(&doc_id, ExportFormat::Pdf, None).expect("export PDF");
             assert!(!pdf.is_empty());
             remove_document(&doc_id);

@@ -12,23 +12,31 @@ from .template import (
     registered_fonts,
 )
 from .types import (
+    BlobFallback,
     BlobInput,
     BlobInputDefinition,
     CompilationMode,
     DiagnosticColor,
+    ExportConfig,
     ExportFormat,
     ExportFormatPdf,
     ExportFormatPng,
     ExportFormatSvg,
     ExportOnceResult,
+    FontConfig,
+    InputDefinition,
     JsonInputDefinition,
+    OicanaConfig,
+    PackageInfo,
     PageRange,
     PageSize,
+    PdfExportConfig,
     RegisteredFont,
+    TemplateManifest,
     ZipLimits,
 )
 
-__version__ = "0.9.0rc1"
+__version__ = "0.9.0rc2"
 
 __all__ = [
     "Template",
@@ -49,8 +57,16 @@ __all__ = [
     "ExportFormatPng",
     "ExportFormatSvg",
     "ExportOnceResult",
+    "TemplateManifest",
+    "PackageInfo",
+    "OicanaConfig",
+    "InputDefinition",
     "JsonInputDefinition",
     "BlobInputDefinition",
+    "BlobFallback",
+    "ExportConfig",
+    "PdfExportConfig",
+    "FontConfig",
     "PageRange",
     "PageSize",
     "ZipLimits",

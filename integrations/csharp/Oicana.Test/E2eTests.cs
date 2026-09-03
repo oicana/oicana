@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using AwesomeAssertions;
 using Oicana.Inputs;
+using Oicana.Manifest;
 using Oicana.Interop;
 using CompilationMode = Oicana.Config.CompilationMode;
 using CompilationOptions = Oicana.Config.CompilationOptions;
@@ -123,23 +124,21 @@ public class E2ETests
     }
 
     [Fact]
-    public void GetInputs()
+    public void GetManifest()
     {
         var template = new Template(_templateFile);
 
-        var inputs = template.Inputs();
+        var manifest = template.Manifest();
 
-        inputs.Should().NotBeNullOrEmpty();
-        var parsed = JsonSerializer.Deserialize<JsonNode>(inputs);
-        parsed.Should().NotBeNull();
+        manifest.Package.Name.Should().Be("oicana-e2e-test");
+        manifest.Package.Version.Should().Be("0.1.0");
+        manifest.Oicana.ManifestVersion.Should().Be(1);
+        manifest.Oicana.ValidateJsonInputsByDefault.Should().BeTrue();
+        manifest.Oicana.Export.Pdf.Standards.Should().Equal("a-3b");
+        manifest.Oicana.Fonts.Require.Should().BeEmpty();
 
-        parsed!["manifest_version"]!.GetValue<int>().Should().Be(1);
-        parsed["inputs"].Should().NotBeNull();
-
-        var inputsArray = parsed["inputs"]!.AsArray();
-        inputsArray.Should().HaveCount(6);
-
-        var inputKeys = inputsArray.Select(i => i!["key"]!.GetValue<string>()).ToList();
+        var inputKeys = manifest.Oicana.Inputs.Select(input => input.Key).ToList();
+        inputKeys.Should().HaveCount(6);
         inputKeys.Should().Contain("default-json");
         inputKeys.Should().Contain("development-json");
         inputKeys.Should().Contain("both-json");
@@ -147,10 +146,21 @@ public class E2ETests
         inputKeys.Should().Contain("development-blob");
         inputKeys.Should().Contain("both-blob");
 
-        var jsonInputs = inputsArray.Where(i => i!["type"]!.GetValue<string>() == "json").ToList();
-        var blobInputs = inputsArray.Where(i => i!["type"]!.GetValue<string>() == "blob").ToList();
-        jsonInputs.Should().HaveCount(3);
-        blobInputs.Should().HaveCount(3);
+        manifest.Oicana.Inputs.OfType<JsonInputDefinition>().Should().HaveCount(3);
+        manifest.Oicana.Inputs.OfType<BlobInputDefinition>().Should().HaveCount(3);
+
+        var json = manifest.Oicana.Inputs.OfType<JsonInputDefinition>()
+            .Single(input => input.Key == "development-json");
+        json.Schema.Should().Be("input.schema.json");
+        json.Development.Should().Be("development.json");
+        json.Default.Should().BeNull();
+        json.Validate.Should().BeTrue();
+
+        var blob = manifest.Oicana.Inputs.OfType<BlobInputDefinition>()
+            .Single(input => input.Key == "default-blob");
+        blob.Default!.File.Should().Be("default.txt");
+        blob.Default.Meta!["image_format"]!.GetValue<string>().Should().Be("png");
+        blob.Development.Should().BeNull();
     }
 
     [Fact]

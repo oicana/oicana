@@ -279,19 +279,19 @@ pub unsafe extern "C" fn unsafe_export_document(
     })
 }
 
-/// Load the inputs of the given template.
+/// Load the manifest of the given template.
 ///
 /// This method requires a previous successful call to [`unsafe_register_template`].
 /// Check if the returned buffer is an error before interpreting the content.
 #[ffi_function]
 #[no_mangle]
-pub extern "C" fn inputs(template: AsciiPointer) -> Buffer {
+pub extern "C" fn manifest(template: AsciiPointer) -> Buffer {
     catch_panic(|| {
         let template = match template.as_str() {
             Ok(template) => template,
             Err(error) => return Buffer::from_error(format!("{error:?}")),
         };
-        Buffer::from_string_result(oicana_ffi_core::inputs(template))
+        Buffer::from_string_result(oicana_ffi_core::manifest(template))
     })
 }
 
@@ -777,7 +777,7 @@ pub fn my_inventory() -> Inventory {
         .register(function!(unsafe_export_template_once))
         .register(function!(unsafe_register_template))
         .register(function!(unsafe_export_document))
-        .register(function!(inputs))
+        .register(function!(manifest))
         .register(function!(document_pages))
         .register(function!(get_source))
         .register(function!(get_file))

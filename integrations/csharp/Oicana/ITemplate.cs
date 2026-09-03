@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Oicana.Interop;
+using Oicana.Manifest;
 using Oicana.Inputs;
 using CompilationOptions = Oicana.Config.CompilationOptions;
 using ExportFormat = Oicana.Config.ExportFormat;
@@ -85,11 +86,11 @@ public interface ITemplate
     void SetValidateInputs(bool validate);
 
     /// <summary>
-    /// Get input definitions from the template manifest.
+    /// Get the template's manifest.
     /// </summary>
-    /// <exception cref="OicanaException">If inputs cannot be retrieved.</exception>
-    /// <returns>JSON string containing input definitions.</returns>
-    string Inputs();
+    /// <exception cref="OicanaException">If the manifest cannot be retrieved.</exception>
+    /// <returns>The Typst package section and the Oicana configuration of the template, including its input definitions.</returns>
+    TemplateManifest Manifest();
 
     /// <summary>
     /// Get source file content from the template.

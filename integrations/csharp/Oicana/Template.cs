@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Oicana.Interop;
+using Oicana.Manifest;
 using Oicana.Inputs;
 using CompilationMode = Oicana.Config.CompilationMode;
 using CompilationOptions = Oicana.Config.CompilationOptions;
@@ -147,9 +148,9 @@ public class Template : ITemplate, IDisposable
     }
 
     /// <inheritdoc />
-    public string Inputs()
+    public TemplateManifest Manifest()
     {
-        return OicanaFfi.GetInputs(_templateId);
+        return TemplateManifest.FromJson(OicanaFfi.GetManifest(_templateId));
     }
 
     /// <inheritdoc />

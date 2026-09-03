@@ -17,7 +17,7 @@ pub struct JsonInputDefinition {
     ///
     /// During development, the value of [`Self::development`] is preferred.
     pub default: Option<String>,
-    /// Path to a file used as input value during development.
+    /// Path to a file used as input value during development, when no value is supplied.
     pub development: Option<String>,
     /// Path to a JSON schema to validate input against.
     pub schema: Option<String>,

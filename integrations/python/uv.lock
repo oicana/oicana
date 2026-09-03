@@ -119,7 +119,7 @@ wheels = [
 
 [[package]]
 name = "oicana"
-version = "0.9.0rc1"
+version = "0.9.0rc2"
 source = { editable = "oicana-python" }
 dependencies = [
     { name = "oicana-native" },
@@ -164,7 +164,7 @@ dev = [
 
 [[package]]
 name = "oicana-native"
-version = "0.9.0rc1"
+version = "0.9.0rc2"
 source = { editable = "oicana-python-native" }
 
 [[package]]

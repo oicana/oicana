@@ -17,6 +17,7 @@ publish = false
 oicana_export = { workspace = true, features = ["pdf", "png", "svg"] }
 oicana_files = { workspace = true, features = ["packed"] }
 oicana_input = { workspace = true }
+oicana_template = { workspace = true }
 oicana_world = { workspace = true }
 
 typst = { workspace = true }

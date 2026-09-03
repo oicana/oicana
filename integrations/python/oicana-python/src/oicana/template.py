@@ -15,7 +15,7 @@ from oicana_native import (
     get_file,
     get_source,
     get_warnings,
-    inputs,
+    manifest,
     register_template,
     remove_document,
     remove_world,
@@ -60,13 +60,13 @@ from .types import (
     PageRange,
     PageSize,
     RegisteredFont,
+    TemplateManifest,
     ZipLimits,
 )
 
 if TYPE_CHECKING:
     import os
     from collections.abc import Iterable
-    from typing import Any
 
 
 def _serialize_export_format(export: ExportFormat) -> str:
@@ -79,9 +79,7 @@ def _serialize_export_format(export: ExportFormat) -> str:
     if export["format"] == "png":
         pixels_per_pt = export["pixelsPerPt"]
         if not math.isfinite(pixels_per_pt) or pixels_per_pt <= 0:
-            raise ValueError(
-                f"pixelsPerPt must be a positive, finite number, got {pixels_per_pt}"
-            )
+            raise ValueError(f"pixelsPerPt must be a positive, finite number, got {pixels_per_pt}")
     return json.dumps(export)
 
 
@@ -379,14 +377,14 @@ class Template:
         self._last_warnings = get_warnings(doc_id)
         return doc_id
 
-    def inputs(self) -> dict[str, Any]:
-        """Get input definitions from manifest.
+    def manifest(self) -> TemplateManifest:
+        """Get the template's manifest.
 
         Returns:
-            Dictionary with input definitions
+            The Typst package section and the Oicana configuration of the
+            template, including its input definitions
         """
-        inputs_json = inputs(self._template_id)
-        return json.loads(inputs_json)  # type: ignore[no-any-return]
+        return TemplateManifest.from_json(json.loads(manifest(self._template_id)))
 
     def source(self, path: str) -> str:
         """Get source file content.

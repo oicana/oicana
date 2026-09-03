@@ -179,7 +179,7 @@ $pdf = $template->export(blobInputs: ['logo' => $logo]);
 ### Template introspection
 
 ```php
-$inputs = $template->inputs();          // input definitions from the manifest
+$manifest = $template->manifest();       // package section and Oicana config, including inputs
 $source = $template->source('main.typ'); // Typst source of a packed file
 $file = $template->file('assets/logo.png'); // binary file from the archive
 ```

@@ -3,6 +3,8 @@
 ## Upcoming
 
 - registering fonts by path accepts a directory and adds every font file in its tree, like the CLI's `--font-path` already did
+- `Template.inputs` is now `Template.manifest` in every integration and returns a typed manifest
+  - the Typst package section and the whole Oicana configuration, including the input definitions
 
 ### CLI
 - `pack` no longer writes directory entries for directories that end up with no packed content, for example a directory whose files are all excluded
@@ -14,6 +16,16 @@
 ### Node.js
 - `engines` declares the actual minimum of `^20.19.0 || >=22.12.0`; the package is ESM-only, so CommonJS callers such as NestJS need a Node version with `require(esm)`
 - Publish a `linux-x64-musl` build
+- `BlobWithMetadata` is now `BlobInput`, its fields `bytes` and `meta` are now `data` and `metadata`
+
+### Browser
+- `BlobWithMetadata` is now `BlobInput`, its fields `bytes` and `meta` are now `data` and `metadata`
+
+### C#
+- `BlobInput.Meta` is now `BlobInput.Metadata`
+
+### Rust
+- `Template::init_with_limits` and `Template::init_with_fonts_and_limits` take custom `ZipLimits`
 
 ## v0.8.0
 

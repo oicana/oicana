@@ -33,5 +33,8 @@ typst = { workspace = true }
 
 thiserror = { workspace = true }
 
+[dev-dependencies]
+zip = { workspace = true, default-features = false, features = ["zstd"] }
+
 [lints]
 workspace = true

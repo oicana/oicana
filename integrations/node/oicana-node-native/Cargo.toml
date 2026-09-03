@@ -8,7 +8,7 @@ license-file = { workspace = true }
 name         = "oicana_node_native"
 publish      = false
 repository   = { workspace = true }
-version      = "0.9.0-rc.1"
+version      = "0.9.0-rc.2"
 
 [lib]
 crate-type = ["cdylib"]

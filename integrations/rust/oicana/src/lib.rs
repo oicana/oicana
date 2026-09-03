@@ -63,7 +63,7 @@ use ::typst::{
     syntax::{FileId, Source},
 };
 #[cfg(feature = "packed")]
-use oicana_files::packed::{PackedTemplate, PackedTemplateError};
+use oicana_files::packed::{PackedTemplate, PackedTemplateError, ZipLimits};
 use oicana_files::TemplateFiles;
 use oicana_input::TemplateInputs;
 use oicana_template::manifest::TemplateManifest;
@@ -157,14 +157,36 @@ impl Template<PackedTemplate> {
     /// Initialize the given template with additional fonts.
     ///
     /// The fonts are available to the template on top of the ones packed with
-    /// it, but do not become part of it: a template relying on them only
-    /// renders where an equivalent font is provided. Declare the families under
-    /// `tool.oicana.fonts.require` in the manifest to have that checked here.
+    /// it. Declare required font families under `tool.oicana.fonts.require`
+    /// in the manifest to have template initialization check font availability.
     pub fn init_with_fonts<R: Read + Seek>(
         template: R,
         fonts: &[FontSource],
     ) -> Result<Self, TemplateInitializationError> {
-        let files = PackedTemplate::new(template)?;
+        Self::init_with_fonts_and_limits(template, fonts, ZipLimits::default())
+    }
+
+    /// Initialize the given template, reading its archive with the given limits.
+    ///
+    /// See [`ZipLimits`] for the defaults that [`Template::init`] applies.
+    pub fn init_with_limits<R: Read + Seek>(
+        template: R,
+        limits: ZipLimits,
+    ) -> Result<Self, TemplateInitializationError> {
+        Self::init_with_fonts_and_limits(template, &[], limits)
+    }
+
+    /// Initialize the given template with additional fonts, reading its archive
+    /// with the given limits.
+    ///
+    /// See [`Template::init_with_fonts`] for how the fonts are used and
+    /// [`ZipLimits`] for the defaults that [`Template::init`] applies.
+    pub fn init_with_fonts_and_limits<R: Read + Seek>(
+        template: R,
+        fonts: &[FontSource],
+        limits: ZipLimits,
+    ) -> Result<Self, TemplateInitializationError> {
+        let files = PackedTemplate::new_with_limits(template, limits)?;
         let manifest = files.manifest()?;
 
         let world = OicanaWorld::new_with_fonts(files, TemplateInputs::new(), manifest, fonts)?;

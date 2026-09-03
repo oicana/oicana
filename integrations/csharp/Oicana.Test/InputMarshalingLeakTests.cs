@@ -21,7 +21,7 @@ public class InputMarshalingLeakTests
         {
             ["blob"] = new BlobInput(new byte[16])
             {
-                Meta = new JsonObject { ["comment"] = new string('y', 1_000_000) },
+                Metadata = new JsonObject { ["comment"] = new string('y', 1_000_000) },
             },
         };
         var options = new CompilationOptions(CompilationMode.Development);

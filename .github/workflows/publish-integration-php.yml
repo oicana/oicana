@@ -199,7 +199,7 @@ jobs:
       - name: Verify PHP extension loads
         run: |
           php -d extension=./target/${{ matrix.platform.target }}/release/${{ matrix.platform.lib }} -r "print_r(array_filter(get_defined_functions()['internal'], fn(\$f) => str_contains(\$f, 'oicana') || str_contains(\$f, 'register') || str_contains(\$f, 'compile')));"
-          php -d extension=./target/${{ matrix.platform.target }}/release/${{ matrix.platform.lib }} -r "exit(function_exists('OicanaInternal\\inputs') ? 0 : 1);"
+          php -d extension=./target/${{ matrix.platform.target }}/release/${{ matrix.platform.lib }} -r "exit(function_exists('OicanaInternal\\manifest') ? 0 : 1);"
         shell: bash
       - name: Rename binary to match installer convention
         run: |

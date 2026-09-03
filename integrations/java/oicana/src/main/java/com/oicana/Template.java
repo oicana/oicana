@@ -1,6 +1,8 @@
 package com.oicana;
 
-import java.lang.reflect.Array;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.oicana.manifest.TemplateManifest;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -20,6 +22,9 @@ import java.util.UUID;
  * }</pre>
  */
 public class Template implements AutoCloseable {
+
+    private static final Gson METADATA_GSON =
+            new GsonBuilder().serializeNulls().disableHtmlEscaping().create();
     private final String templateId;
     private volatile boolean closed = false;
     private volatile String lastWarnings;
@@ -390,13 +395,14 @@ public class Template implements AutoCloseable {
     }
 
     /**
-     * Get the input definitions for this template as a JSON string.
+     * Get the manifest of this template.
      *
-     * @return JSON string describing the template's input definitions
+     * @return the Typst package section and the Oicana configuration of the template, including
+     *     its input definitions
      */
-    public String inputs() {
+    public TemplateManifest manifest() {
         ensureNotClosed();
-        return OicanaNative.inputs(this.templateId);
+        return TemplateManifest.fromJson(OicanaNative.manifest(this.templateId));
     }
 
     /**
@@ -489,86 +495,18 @@ public class Template implements AutoCloseable {
         Map<String, NativeBlobWithMetadata> result = new HashMap<>(blobInputs.size());
         for (var entry : blobInputs.entrySet()) {
             BlobInput blob = entry.getValue();
-            String meta = blob.metadata() == null ? "{}" : toJson(blob.metadata());
+            String meta = blob.metadata() == null ? "{}" : metadataToJson(blob.metadata());
             result.put(entry.getKey(), new NativeBlobWithMetadata(blob.data(), meta));
         }
         return result;
     }
 
-    private static String toJson(Map<String, Object> map) {
-        StringBuilder sb = new StringBuilder("{");
-        boolean first = true;
-        for (var entry : map.entrySet()) {
-            if (!first) sb.append(",");
-            first = false;
-            sb.append("\"").append(escapeJson(entry.getKey())).append("\":");
-            sb.append(valueToJson(entry.getValue()));
-        }
-        sb.append("}");
-        return sb.toString();
-    }
-
-    @SuppressWarnings("unchecked")
-    static String valueToJson(Object value) {
-        if (value == null) return "null";
-        if (value instanceof String s) return "\"" + escapeJson(s) + "\"";
-        if (value instanceof Number n) return numberToJson(n);
-        if (value instanceof Boolean b) return b.toString();
-        if (value instanceof Map<?, ?> m) return toJson((Map<String, Object>) m);
-        if (value.getClass().isArray()) {
-            StringBuilder sb = new StringBuilder("[");
-            int length = Array.getLength(value);
-            for (int i = 0; i < length; i++) {
-                if (i > 0) sb.append(",");
-                sb.append(valueToJson(Array.get(value, i)));
-            }
-            sb.append("]");
-            return sb.toString();
-        }
-        if (value instanceof Iterable<?> iter) {
-            StringBuilder sb = new StringBuilder("[");
-            boolean first = true;
-            for (Object item : iter) {
-                if (!first) sb.append(",");
-                first = false;
-                sb.append(valueToJson(item));
-            }
-            sb.append("]");
-            return sb.toString();
-        }
-        return "\"" + escapeJson(value.toString()) + "\"";
-    }
-
-    private static String numberToJson(Number number) {
-        if ((number instanceof Double || number instanceof Float)
-                && !Double.isFinite(number.doubleValue())) {
-            throw new IllegalArgumentException(
-                    "Blob metadata numbers must be finite, got " + number);
-        }
-        return number.toString();
-    }
-
-    static String escapeJson(String s) {
-        StringBuilder sb = new StringBuilder(s.length() + 8);
-        for (int i = 0; i < s.length(); i++) {
-            char c = s.charAt(i);
-            switch (c) {
-                case '\\' -> sb.append("\\\\");
-                case '"' -> sb.append("\\\"");
-                case '\n' -> sb.append("\\n");
-                case '\r' -> sb.append("\\r");
-                case '\t' -> sb.append("\\t");
-                case '\b' -> sb.append("\\b");
-                case '\f' -> sb.append("\\f");
-                default -> {
-                    if (c < 0x20) {
-                        sb.append(String.format("\\u%04x", (int) c));
-                    } else {
-                        sb.append(c);
-                    }
-                }
-            }
-        }
-        return sb.toString();
+    /**
+     * Serialize blob metadata for the native layer.
+     *
+     * {@code null} values are kept, so a template sees {@code none} rather than a missing key.
+     */
+    static String metadataToJson(Map<String, Object> metadata) {
+        return METADATA_GSON.toJson(metadata);
     }
 }

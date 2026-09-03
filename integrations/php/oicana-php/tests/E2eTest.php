@@ -5,6 +5,9 @@ declare(strict_types=1);
 use Oicana\CompilationMode;
 use Oicana\ExportFormat;
 use Oicana\Inputs\BlobInput;
+use Oicana\Manifest\BlobFallback;
+use Oicana\Manifest\BlobInputDefinition;
+use Oicana\Manifest\JsonInputDefinition;
 use Oicana\PageRange;
 use Oicana\Template;
 
@@ -127,6 +130,55 @@ test('e2e all-inputs', function () {
         expect($image)
             ->not->toBeEmpty()
             ->and($image)->toStartWith("\x89PNG");
+    } finally {
+        $template->cleanup();
+    }
+});
+
+test('manifest exposes the package section and the Oicana config', function () {
+    $templateBytes = file_get_contents(e2e_template_path());
+    $template = new Template($templateBytes);
+
+    try {
+        $manifest = $template->manifest();
+
+        expect($manifest->package->name)->toBe('oicana-e2e-test');
+        expect($manifest->package->version)->toBe('0.1.0');
+        expect($manifest->oicana->manifestVersion)->toBe(1);
+        expect($manifest->oicana->validateJsonInputsByDefault)->toBeTrue();
+        expect($manifest->oicana->export->pdf->standards)->toBe(['a-3b']);
+        expect($manifest->oicana->fonts->require)->toBe([]);
+
+        $json = null;
+        $blob = null;
+        foreach ($manifest->oicana->inputs as $input) {
+            if ($input instanceof JsonInputDefinition && $input->key === 'development-json') {
+                $json = $input;
+            }
+            if ($input instanceof BlobInputDefinition && $input->key === 'default-blob') {
+                $blob = $input;
+            }
+        }
+
+        expect($json)->toBeInstanceOf(JsonInputDefinition::class);
+        expect($blob)->toBeInstanceOf(BlobInputDefinition::class);
+        assert($json instanceof JsonInputDefinition);
+        assert($blob instanceof BlobInputDefinition);
+
+        expect($json->schema)->toBe('input.schema.json');
+        expect($json->development)->toBe('development.json');
+        expect($json->default)->toBeNull();
+        expect($json->validate)->toBeTrue();
+
+        $fallback = $blob->default;
+        expect($fallback)->toBeInstanceOf(BlobFallback::class);
+        assert($fallback instanceof BlobFallback);
+        expect($fallback->file)->toBe('default.txt');
+        $meta = $fallback->meta;
+        expect($meta)->not->toBeNull();
+        assert($meta !== null);
+        expect($meta['image_format'])->toBe('png');
+        expect($blob->development)->toBeNull();
     } finally {
         $template->cleanup();
     }

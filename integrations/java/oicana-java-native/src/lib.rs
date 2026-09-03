@@ -405,7 +405,7 @@ pub extern "system" fn Java_com_oicana_OicanaNative_removeWorld<'local>(
 }
 
 #[unsafe(no_mangle)]
-pub extern "system" fn Java_com_oicana_OicanaNative_inputs<'local>(
+pub extern "system" fn Java_com_oicana_OicanaNative_manifest<'local>(
     mut unowned_env: EnvUnowned<'local>,
     _class: JClass<'local>,
     template_id: JString<'local>,
@@ -413,7 +413,7 @@ pub extern "system" fn Java_com_oicana_OicanaNative_inputs<'local>(
     unowned_env
         .with_env(|env| -> jni::errors::Result<JString<'_>> {
             let template_id = template_id.try_to_string(env)?;
-            let json = oicana_ffi_core::inputs(&template_id).map_err(|e| throw_ffi(env, e))?;
+            let json = oicana_ffi_core::manifest(&template_id).map_err(|e| throw_ffi(env, e))?;
             JString::from_str(env, &json)
         })
         .resolve::<jni::errors::ThrowRuntimeExAndDefault>()

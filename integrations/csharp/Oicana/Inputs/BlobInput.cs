@@ -19,10 +19,10 @@ public class BlobInput
     /// Construct a new blob input from bytes with metadata
     /// </summary>
     [SetsRequiredMembers]
-    public BlobInput(byte[] data, BlobMeta? meta)
+    public BlobInput(byte[] data, BlobMeta? metadata)
     {
         Data = data;
-        Meta = meta?.Build();
+        Metadata = metadata?.Build();
     }
 
     /// <summary>
@@ -33,5 +33,5 @@ public class BlobInput
     /// <summary>
     /// Metadata for the blob (e.g., image format)
     /// </summary>
-    public JsonNode? Meta { get; init; }
+    public JsonNode? Metadata { get; init; }
 }

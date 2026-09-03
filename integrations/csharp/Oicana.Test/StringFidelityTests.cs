@@ -83,7 +83,7 @@ public class StringFidelityTests
     }
 
     [Fact]
-    public void InputsJsonRemainsParseable()
+    public void ManifestJsonRemainsParseable()
     {
         var manifest = MinimalManifest + "\n" + """
             [[tool.oicana.inputs]]
@@ -93,11 +93,9 @@ public class StringFidelityTests
             """;
         using var template = new Template(PackTemplate(manifest, "Hello"));
 
-        var inputsJson = template.Inputs();
+        var parsed = template.Manifest();
 
-        var parsed = JsonNode.Parse(inputsJson);
-        parsed.Should().NotBeNull("the inputs JSON must stay valid JSON");
-        parsed!["inputs"]![0]!["key"]!.GetValue<string>().Should().Be("quo\"te");
+        parsed.Oicana.Inputs[0].Key.Should().Be("quo\"te");
     }
 
     [Fact]

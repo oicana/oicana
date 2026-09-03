@@ -54,7 +54,7 @@ class OicanaNative {
 
     static native void removeWorld(String templateId);
 
-    static native String inputs(String templateId);
+    static native String manifest(String templateId);
 
     static native String documentPages(String documentId);
 

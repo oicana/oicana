@@ -206,14 +206,14 @@ pub fn compile_template(
     Ok(result_id)
 }
 
-/// Load all input definitions for the given template.
+/// Load the manifest of the given template.
 ///
 /// Calling this method requires a previous call to [`register_template`] with the same template
 /// identifier.
 #[wasm_bindgen]
-pub fn inputs(template: String) -> Result<String, String> {
+pub fn manifest(template: String) -> Result<String, String> {
     init_logging();
-    oicana_ffi_core::inputs(&template).map_err(|error| error.to_string())
+    oicana_ffi_core::manifest(&template).map_err(|error| error.to_string())
 }
 
 /// Return the sizes (in points) of every page of a compiled document as a JSON
@@ -365,21 +365,21 @@ fn decode_json_inputs(value: JsValue) -> Result<HashMap<String, String>, String>
 fn decode_blob_inputs(
     value: JsValue,
 ) -> Result<HashMap<String, oicana_ffi_core::BlobWithMetadata>, String> {
-    let blobs: HashMap<String, BlobWithMetadata> = from_value(value).map_err(|error| {
-        format!("Failed to deserialize HashMap<String, BlobWithMetadata> from JavaScript value: {error:?}")
+    let blobs: HashMap<String, BlobInput> = from_value(value).map_err(|error| {
+        format!("Failed to deserialize HashMap<String, BlobInput> from JavaScript value: {error:?}")
     })?;
     blobs
         .into_iter()
         .map(|(key, blob)| {
-            let meta = match blob.meta {
-                Some(meta) => serde_json::to_string(&meta)
+            let meta = match blob.metadata {
+                Some(metadata) => serde_json::to_string(&metadata)
                     .map_err(|error| format!("Failed to encode metadata for '{key}': {error:?}"))?,
                 None => "{}".to_owned(),
             };
             Ok((
                 key,
                 oicana_ffi_core::BlobWithMetadata {
-                    bytes: blob.bytes,
+                    bytes: blob.data,
                     meta,
                 },
             ))
@@ -424,8 +424,8 @@ impl From<CompilationMode> for oicana_ffi_core::CompilationMode {
 }
 
 #[derive(Deserialize)]
-struct BlobWithMetadata {
-    bytes: Vec<u8>,
+struct BlobInput {
+    data: Vec<u8>,
     #[serde(default)]
-    meta: Option<serde_json::Value>,
+    metadata: Option<serde_json::Value>,
 }

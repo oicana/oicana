@@ -281,14 +281,14 @@ pub fn compile_template(
     })
 }
 
-/// Load all input definitions for the given template.
+/// Load the manifest of the given template.
 ///
 /// Calling this method requires a previous call to `register_template` with the same template
 /// identifier.
 #[php_function]
-#[php(name = "OicanaInternal\\inputs")]
-pub fn inputs(template: String) -> PhpResult<String> {
-    catch_panic(|| oicana_ffi_core::inputs(&template).map_err(into_php_err))
+#[php(name = "OicanaInternal\\manifest")]
+pub fn manifest(template: String) -> PhpResult<String> {
+    catch_panic(|| oicana_ffi_core::manifest(&template).map_err(into_php_err))
 }
 
 /// Return the sizes (in points) of every page of a compiled document as a JSON
@@ -419,7 +419,7 @@ pub fn get_module(module: ModuleBuilder) -> ModuleBuilder {
         .function(wrap_function!(export_template_once))
         .function(wrap_function!(configure_diagnostic_color))
         .function(wrap_function!(compile_template))
-        .function(wrap_function!(inputs))
+        .function(wrap_function!(manifest))
         .function(wrap_function!(document_pages))
         .function(wrap_function!(get_source))
         .function(wrap_function!(get_file))

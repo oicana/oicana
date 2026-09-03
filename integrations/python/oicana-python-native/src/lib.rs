@@ -205,13 +205,13 @@ fn compile_template(
     .map_err(into_py_err)
 }
 
-/// Load all input definitions for the given template.
+/// Load the manifest of the given template.
 ///
 /// Calling this method requires a previous call to `register_template` with the same template
 /// identifier.
 #[pyfunction]
-fn inputs(py: Python<'_>, template: String) -> PyResult<String> {
-    py.detach(|| oicana_ffi_core::inputs(&template))
+fn manifest(py: Python<'_>, template: String) -> PyResult<String> {
+    py.detach(|| oicana_ffi_core::manifest(&template))
         .map_err(into_py_err)
 }
 
@@ -335,7 +335,7 @@ fn oicana_native(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(configure_diagnostic_color, m)?)?;
     m.add_function(wrap_pyfunction!(compile_template, m)?)?;
     m.add_function(wrap_pyfunction!(export_document, m)?)?;
-    m.add_function(wrap_pyfunction!(inputs, m)?)?;
+    m.add_function(wrap_pyfunction!(manifest, m)?)?;
     m.add_function(wrap_pyfunction!(document_pages, m)?)?;
     m.add_function(wrap_pyfunction!(get_source, m)?)?;
     m.add_function(wrap_pyfunction!(get_file, m)?)?;

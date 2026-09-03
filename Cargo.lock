@@ -3415,7 +3415,7 @@ dependencies = [
 
 [[package]]
 name = "oicana"
-version = "0.9.0-rc.1"
+version = "0.9.0-rc.2"
 dependencies = [
  "oicana_export",
  "oicana_files",
@@ -3424,11 +3424,12 @@ dependencies = [
  "oicana_world",
  "thiserror",
  "tmp-typst-custom-metadata",
+ "zip 6.0.0",
 ]
 
 [[package]]
 name = "oicana-browser-wasm"
-version = "0.9.0-rc.1"
+version = "0.9.0-rc.2"
 dependencies = [
  "console_error_panic_hook",
  "console_log",
@@ -3445,7 +3446,7 @@ dependencies = [
 
 [[package]]
 name = "oicana-python-native"
-version = "0.9.0-rc.1"
+version = "0.9.0-rc.2"
 dependencies = [
  "oicana_ffi_core",
  "pyo3",
@@ -3454,7 +3455,7 @@ dependencies = [
 
 [[package]]
 name = "oicana_cli"
-version = "0.9.0-rc.1"
+version = "0.9.0-rc.2"
 dependencies = [
  "anyhow",
  "axoupdater",
@@ -3485,7 +3486,7 @@ dependencies = [
 
 [[package]]
 name = "oicana_csharp"
-version = "0.9.0-rc.1"
+version = "0.9.0-rc.2"
 dependencies = [
  "interoptopus",
  "interoptopus_backend_csharp",
@@ -3495,7 +3496,7 @@ dependencies = [
 
 [[package]]
 name = "oicana_export"
-version = "0.9.0-rc.1"
+version = "0.9.0-rc.2"
 dependencies = [
  "oicana_files",
  "oicana_input",
@@ -3513,13 +3514,14 @@ dependencies = [
 
 [[package]]
 name = "oicana_ffi_core"
-version = "0.9.0-rc.1"
+version = "0.9.0-rc.2"
 dependencies = [
  "dashmap",
  "log",
  "oicana_export",
  "oicana_files",
  "oicana_input",
+ "oicana_template",
  "oicana_world",
  "once_cell",
  "serde",
@@ -3534,7 +3536,7 @@ dependencies = [
 
 [[package]]
 name = "oicana_files"
-version = "0.9.0-rc.1"
+version = "0.9.0-rc.2"
 dependencies = [
  "codespan-reporting",
  "dirs",
@@ -3551,7 +3553,7 @@ dependencies = [
 
 [[package]]
 name = "oicana_input"
-version = "0.9.0-rc.1"
+version = "0.9.0-rc.2"
 dependencies = [
  "log",
  "serde",
@@ -3561,7 +3563,7 @@ dependencies = [
 
 [[package]]
 name = "oicana_java_native"
-version = "0.9.0-rc.1"
+version = "0.9.0-rc.2"
 dependencies = [
  "jni",
  "oicana_ffi_core",
@@ -3569,7 +3571,7 @@ dependencies = [
 
 [[package]]
 name = "oicana_node_native"
-version = "0.9.0-rc.1"
+version = "0.9.0-rc.2"
 dependencies = [
  "napi",
  "napi-build",
@@ -3579,7 +3581,7 @@ dependencies = [
 
 [[package]]
 name = "oicana_php_native"
-version = "0.9.0-rc.1"
+version = "0.9.0-rc.2"
 dependencies = [
  "ext-php-rs",
  "oicana_ffi_core",
@@ -3588,7 +3590,7 @@ dependencies = [
 
 [[package]]
 name = "oicana_template"
-version = "0.9.0-rc.1"
+version = "0.9.0-rc.2"
 dependencies = [
  "chrono",
  "ignore",
@@ -3606,7 +3608,7 @@ dependencies = [
 
 [[package]]
 name = "oicana_testing"
-version = "0.9.0-rc.1"
+version = "0.9.0-rc.2"
 dependencies = [
  "image",
  "json_schema_ast",
@@ -3631,7 +3633,7 @@ dependencies = [
 
 [[package]]
 name = "oicana_world"
-version = "0.9.0-rc.1"
+version = "0.9.0-rc.2"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5290,7 +5292,7 @@ dependencies = [
 
 [[package]]
 name = "test_compare"
-version = "0.9.0-rc.1"
+version = "0.9.0-rc.2"
 dependencies = [
  "anyhow",
  "clap",

@@ -1,5 +1,9 @@
 package com.oicana;
 
+import com.oicana.manifest.BlobInputDefinition;
+import com.oicana.manifest.InputDefinition;
+import com.oicana.manifest.JsonInputDefinition;
+import com.oicana.manifest.TemplateManifest;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -35,6 +39,42 @@ class E2eTest {
         Path outputDir = Path.of("testOutput");
         Files.createDirectories(outputDir);
         Files.write(outputDir.resolve(filename), data);
+    }
+
+    @Test
+    void manifestExposesThePackageSectionAndTheOicanaConfig() throws IOException {
+        try (Template template = new Template(templateFile())) {
+            TemplateManifest manifest = template.manifest();
+
+            assertEquals("oicana-e2e-test", manifest.packageInfo().name());
+            assertEquals("0.1.0", manifest.packageInfo().version());
+            assertEquals(1, manifest.oicana().manifestVersion());
+            assertTrue(manifest.oicana().validateJsonInputsByDefault());
+            assertEquals(java.util.List.of("a-3b"), manifest.oicana().export().pdf().standards());
+            assertEquals(java.util.List.of(), manifest.oicana().fonts().require());
+
+            InputDefinition json = manifest.oicana().inputs().stream()
+                    .filter(input -> input.key().equals("development-json"))
+                    .findFirst()
+                    .orElseThrow();
+            assertInstanceOf(JsonInputDefinition.class, json);
+            JsonInputDefinition jsonInput = (JsonInputDefinition) json;
+            assertEquals("input.schema.json", jsonInput.schema());
+            assertEquals("development.json", jsonInput.development());
+            assertNull(jsonInput.defaultValue());
+            assertTrue(jsonInput.validate());
+
+            InputDefinition blob = manifest.oicana().inputs().stream()
+                    .filter(input -> input.key().equals("default-blob"))
+                    .findFirst()
+                    .orElseThrow();
+            assertInstanceOf(BlobInputDefinition.class, blob);
+            BlobInputDefinition blobInput = (BlobInputDefinition) blob;
+            assertEquals("default.txt", blobInput.defaultValue().file());
+            assertEquals("png", blobInput.defaultValue().meta().get("image_format"));
+            assertEquals(5L, blobInput.defaultValue().meta().get("foo"));
+            assertNull(blobInput.development());
+        }
     }
 
     @Test
