@@ -93,6 +93,21 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
+      - name: Wait for the wasm package
+        # a freshly published version takes a few minutes to become installable
+        run: |
+          version=$(jq -r '.dependencies["@oicana/browser-wasm"]' package.json)
+          for attempt in $(seq 1 60); do
+            if npm view "@oicana/browser-wasm@$version" version --prefer-online > /dev/null 2>&1; then
+              echo "@oicana/browser-wasm@$version is available"
+              exit 0
+            fi
+            echo "Attempt $attempt: @oicana/browser-wasm@$version is not on npmjs yet, waiting"
+            sleep 30
+          done
+          echo "@oicana/browser-wasm@$version did not become available within 30 minutes"
+          exit 1
+        working-directory: integrations/browser/oicana-browser
       - name: Install dependencies
         run: npm i
         working-directory: integrations/browser/oicana-browser
