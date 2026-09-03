@@ -2,20 +2,25 @@
   "name": "@oicana/node-native",
   "version": "0.9.0-rc.2",
   "description": "Native binary for @oicana/node. Install @oicana/node instead.",
+  "author": "Oicana <hello@oicana.com>",
   "main": "index.js",
+  "homepage": "https://oicana.com",
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/napi-rs/package-template.git"
+    "url": "git+https://github.com/oicana/oicana.git"
+  },
+  "bugs": {
+    "url": "https://github.com/oicana/oicana/issues"
   },
   "license": "PolyForm-Noncommercial-1.0.0",
   "browser": "browser.js",
   "keywords": [
-    "napi-rs",
-    "NAPI",
-    "N-API",
-    "Rust",
-    "node-addon",
-    "node-addon-api"
+    "oicana",
+    "typst",
+    "typesetting",
+    "pdf",
+    "napi",
+    "native"
   ],
   "files": [
     "index.d.ts",
