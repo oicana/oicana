@@ -90,6 +90,14 @@ The CD pipeline runs on a tag `oicana_node-v0.0.0-rc.1` or manual trigger. It pu
 platform packages, then the wrapper `@oicana/node`. Each package is only published if that version doesn't exist on the
 index yet. Publishing uses npm trusted publishing (OIDC).
 
+### Platform packages in `optionalDependencies`
+
+`napi prepublish` regenerates the `optionalDependencies` of `@oicana/node-native` from `napi.targets` at publish time,
+so the block in `package.json` only affects local installs, never what consumers get.
+
+Do not bump it to the version being released. Those platform packages only come into existence while that release is
+publishing, so `yarn install` cannot resolve them and the lockfile cannot be updated.
+
 ## PHP
 
 Push a tag `oicana_php-v0.0.0-rc.1` or manually trigger .github/workflows/publish-integration-php.yml with a version input.
