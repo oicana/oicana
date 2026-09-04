@@ -26,7 +26,7 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 24
           cache: yarn
           cache-dependency-path: ${{ env.PROJECT_DIR }}/yarn.lock
       - name: Install
@@ -68,14 +68,14 @@ jobs:
           - host: windows-latest
             target: aarch64-pc-windows-msvc
             build: yarn build --target aarch64-pc-windows-msvc
-    name: stable - ${{ matrix.settings.target }} - node@22
+    name: stable - ${{ matrix.settings.target }} - node@24
     runs-on: ${{ matrix.settings.host }}
     steps:
       - uses: actions/checkout@v6
       - name: Setup node
         uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 24
           cache: yarn
           cache-dependency-path: ${{ env.PROJECT_DIR }}/yarn.lock
       - name: Install
@@ -262,7 +262,7 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 24
           cache: yarn
           cache-dependency-path: ${{ env.PROJECT_DIR }}/yarn.lock
       - name: Install dependencies
@@ -287,43 +287,60 @@ jobs:
           name=$(node -p "require('./package.json').name")
           version=$(node -p "require('./package.json').version")
           echo "Checking if $name@$version already exists:"
-          if npm view $name@$version > /dev/null; then
+          if npm view "$name@$version" > /dev/null 2>&1; then
             echo "Version $version already exists on npmjs. Not publishing."
             exit 0
-          else
-            echo "Version $version not found on npmjs. Proceeding to publish..."
+          fi
+          echo "Version $version not found on npmjs. Proceeding to publish..."
+
+          if [ -z "$ACTIONS_ID_TOKEN_REQUEST_URL" ]; then
+            echo "No OIDC token available, the job is missing 'permissions: id-token: write'."
+            exit 1
           fi
 
-          if echo $version | grep -Eq "[0-9]+\.[0-9]+\.[0-9]+$";
+          # even a dry-run below will still trigger a publish of the optional dependencies through the 'prepublishOnly' script!
+          if echo "$version" | grep -Eq "^[0-9]+\.[0-9]+\.[0-9]+$";
           then
-            echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
-            # even a dry-run here will still trigger a publish of the optional dependencies through the 'prepublishOnly' script!
             npm publish --access public
-          elif echo $version | grep -Eq "[0-9]+\.[0-9]+\.[0-9]+";
+          elif echo "$version" | grep -Eq "^[0-9]+\.[0-9]+\.[0-9]+";
           then
-            echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
-            # even a dry-run here will still trigger a publish of the optional dependencies through the 'prepublishOnly' script!
             npm publish --access public --tag next
           fi
         working-directory: ${{ env.PROJECT_DIR }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   build-and-publish-wrapper:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     needs:
       - publish
     env:
-      NPM_AUTH: ${{ secrets.NPM_AUTH }}
       LIB_NAME: node
       SCOPE: oicana
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: '20.x'
+          node-version: 24
+      - name: Wait for the native package
+        # a freshly published version takes a few minutes to become installable
+        run: |
+          version=$(jq -r '.dependencies["@oicana/node-native"]' package.json)
+          for attempt in $(seq 1 60); do
+            if npm view "@oicana/node-native@$version" version --prefer-online > /dev/null 2>&1; then
+              echo "@oicana/node-native@$version is available"
+              exit 0
+            fi
+            echo "Attempt $attempt: @oicana/node-native@$version is not on npmjs yet, waiting"
+            sleep 30
+          done
+          echo "@oicana/node-native@$version did not become available within 30 minutes"
+          exit 1
+        working-directory: integrations/node/oicana-node
       - name: Install dependencies
         run: npm i
         working-directory: integrations/node/oicana-node
@@ -334,6 +351,7 @@ jobs:
         run: npm pack
         working-directory: integrations/node/oicana-node
       - name: version
+        id: version
         run: echo "version=$(jq -r '.version' package.json)" >> $GITHUB_OUTPUT
         working-directory: integrations/node/oicana-node
       - uses: actions/upload-artifact@v7
@@ -346,23 +364,22 @@ jobs:
           version=$(node -p "require('./package.json').version")
           
           echo "Checking if $name@$version already exists:"
-          if npm view $name@$version > /dev/null; then
+          if npm view "$name@$version" > /dev/null 2>&1; then
             echo "Version $version already exists on npmjs. Not publishing."
             exit 0
-          else
-            echo "Version $version not found on npmjs. Proceeding to publish..."
           fi
-          
-          
-          echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
-          if echo $version | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$";
+          echo "Version $version not found on npmjs. Proceeding to publish..."
+
+          if [ -z "$ACTIONS_ID_TOKEN_REQUEST_URL" ]; then
+            echo "No OIDC token available, the job is missing 'permissions: id-token: write'."
+            exit 1
+          fi
+
+          if echo "$version" | grep -Eq "^[0-9]+\.[0-9]+\.[0-9]+$";
           then
             npm publish --access public
-          elif echo $version | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+";
+          elif echo "$version" | grep -Eq "^[0-9]+\.[0-9]+\.[0-9]+";
           then
             npm publish --access public --tag next
           fi
         working-directory: integrations/node/oicana-node
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
