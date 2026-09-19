@@ -1,8 +1,8 @@
 name: publish csharp
 
 # This workflow builds and publishes the C# integration
-# 
-# It requires the secret NUGET_TOKEN with rights to push to the nuget.org package 
+#
+# It requires the secret NUGET_TOKEN with rights to push to the nuget.org package
 
 on:
   workflow_dispatch:
@@ -67,21 +67,35 @@ jobs:
 
           echo "All version sources match: ${VERSION}"
 
-  build-linux:
+  build-linux-x64:
     needs: validate-version
     runs-on: ubuntu-latest
+    container: quay.io/pypa/manylinux_2_28_x86_64:2026.09.14-1
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
       - name: Install rust toolchain
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: stable
+        uses: dtolnay/rust-toolchain@1.98.1
       - name: Build release
         run: cargo build --release -p ${{ env.LIB_NAME }}
       - uses: actions/upload-artifact@v7
         with:
-          name: oicana-csharp-linux
+          name: oicana-csharp-linux-x64
+          path: target/release/lib${{ env.LIB_NAME }}.so
+  build-linux-arm64:
+    needs: validate-version
+    runs-on: ubuntu-24.04-arm
+    container: quay.io/pypa/manylinux_2_28_aarch64:2026.09.14-1
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Install rust toolchain
+        uses: dtolnay/rust-toolchain@1.98.1
+      - name: Build release
+        run: cargo build --release -p ${{ env.LIB_NAME }}
+      - uses: actions/upload-artifact@v7
+        with:
+          name: oicana-csharp-linux-arm64
           path: target/release/lib${{ env.LIB_NAME }}.so
   build-windows:
     needs: validate-version
@@ -90,9 +104,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
       - name: Install rust toolchain
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: stable
+        uses: dtolnay/rust-toolchain@1.98.1
       - name: Build release
         run: cargo build --release -p ${{ env.LIB_NAME }}
       - uses: actions/upload-artifact@v7
@@ -106,9 +118,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
       - name: Install rust toolchain
-        uses: dtolnay/rust-toolchain@master
+        uses: dtolnay/rust-toolchain@1.98.1
         with:
-          toolchain: stable
           targets: x86_64-apple-darwin
       - name: Build release
         run: cargo build --release -p ${{ env.LIB_NAME }} --target=x86_64-apple-darwin
@@ -123,9 +134,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
       - name: Install rust toolchain
-        uses: dtolnay/rust-toolchain@master
+        uses: dtolnay/rust-toolchain@1.98.1
         with:
-          toolchain: stable
           targets: aarch64-apple-darwin
       - name: Build release
         run: cargo build --release -p ${{ env.LIB_NAME }} --target=aarch64-apple-darwin
@@ -133,16 +143,41 @@ jobs:
         with:
           name: oicana-csharp-macos-arm
           path: target/aarch64-apple-darwin/release/lib${{ env.LIB_NAME }}.dylib
-  package-nuget:
+  check-glibc:
+    name: Assert the glibc floor of the Linux libraries
     runs-on: ubuntu-latest
-    needs: [validate-version, build-linux, build-windows, build-mac-x86, build-mac-arm]
+    needs: [build-linux-x64, build-linux-arm64]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
       - uses: actions/download-artifact@v8
         with:
-          name: oicana-csharp-linux
+          name: oicana-csharp-linux-x64
+          path: linux-x64
+      - uses: actions/download-artifact@v8
+        with:
+          name: oicana-csharp-linux-arm64
+          path: linux-arm64
+      - name: Assert glibc floor
+        run: |
+          ./.github/scripts/assert-glibc-floor.sh 2.28 \
+            linux-x64/lib${{ env.LIB_NAME }}.so \
+            linux-arm64/lib${{ env.LIB_NAME }}.so
+
+  package-nuget:
+    runs-on: ubuntu-latest
+    needs: [validate-version, build-linux-x64, build-linux-arm64, build-windows, build-mac-x86, build-mac-arm, check-glibc]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - uses: actions/download-artifact@v8
+        with:
+          name: oicana-csharp-linux-x64
           path: integrations/csharp/Oicana/runtimes/linux-x64/native
+      - uses: actions/download-artifact@v8
+        with:
+          name: oicana-csharp-linux-arm64
+          path: integrations/csharp/Oicana/runtimes/linux-arm64/native
       - uses: actions/download-artifact@v8
         with:
           name: oicana-csharp-windows

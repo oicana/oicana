@@ -25,7 +25,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.98.1
         with:
           components: rustfmt, clippy
       - name: check format
@@ -64,7 +64,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.98.1
       - name: check
         run: cargo check --all-features --all-targets
 
@@ -87,7 +87,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.98.1
       - name: run tests
         run: cargo test --all-targets --all-features
 
@@ -188,7 +188,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.98.1
       - name: Setup dotnet
         uses: actions/setup-dotnet@v5
         with:
@@ -227,7 +227,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.98.1
       - name: Install uv
         uses: astral-sh/setup-uv@v7
       - name: Sync workspace dependencies
@@ -255,9 +255,9 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.98.1
         with:
-          components: clippy
+          components: clippy, rustfmt
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -291,17 +291,22 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
+            container: quay.io/pypa/manylinux_2_28_x86_64:2026.09.14-1
             lib: liboicana_csharp.so
           - os: macos-latest
             lib: liboicana_csharp.dylib
           - os: windows-latest
             lib: oicana_csharp.dll
     runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v6
       - uses: actions/cache@v5
         with:
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}
+          key: ${{ runner.os }}-${{ matrix.container }}-cargo-${{ hashFiles('**/Cargo.toml') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
           path: |
@@ -310,9 +315,12 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.98.1
       - name: build oicana_csharp
         run: cargo build --release -p oicana_csharp
+      - name: Assert glibc floor
+        if: matrix.container != ''
+        run: ./.github/scripts/assert-glibc-floor.sh 2.28 ./target/release/${{ matrix.lib }}
       - name: Upload liboicana_csharp
         uses: actions/upload-artifact@v7
         with:
@@ -335,7 +343,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.98.1
       - uses: taiki-e/install-action@v2
         with:
           tool: wasm-pack
@@ -378,7 +386,9 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.98.1
+        with:
+          components: rustfmt
       - name: Install dependencies
         run: yarn install
         working-directory: integrations/node/oicana-node-native
@@ -439,7 +449,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.98.1
       - name: Build and install ${{ matrix.tool_config.tool }}
         run: cargo install --force --path ${{ matrix.tool_config.path }}
       - name: Upload CLI tool binary
@@ -486,42 +496,52 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
+            container: php:8.4-cli-bookworm
             target: x86_64-unknown-linux-gnu
-            rust: stable
+            rust: 1.98.1
             lib: liboicana_php_native.so
             flags: "-C link-arg=-Wl,-undefined,dynamic_lookup"
           - os: macos-latest
             target: aarch64-apple-darwin
-            rust: stable
+            rust: 1.98.1
             lib: liboicana_php_native.dylib
             flags: "-C link-arg=-Wl,-undefined,dynamic_lookup"
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             # ext-php-rs requires nightly Rust when on Windows.
-            rust: nightly
+            rust: nightly-2026-09-01
             lib: oicana_php_native.dll
             flags: ""
     runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v6
       - uses: actions/cache@v5
         with:
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}
+          key: ${{ runner.os }}-${{ matrix.container }}-cargo-${{ hashFiles('**/Cargo.toml') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-
+            ${{ runner.os }}-${{ matrix.container }}-cargo-
           path: |
             ~/.cargo/bin/
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
+      - name: Install libclang for bindgen
+        if: matrix.container != ''
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends libclang-dev
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
-          components: rustfmt
       - run: rustup show
       - name: Setup PHP
+        if: matrix.container == ''
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
@@ -537,6 +557,9 @@ jobs:
         run: cargo build --release --target ${{ matrix.target }} -p oicana_php_native
         env:
           RUSTFLAGS: ${{ matrix.flags }}
+      - name: Assert glibc floor
+        if: matrix.container != ''
+        run: ./.github/scripts/assert-glibc-floor.sh 2.35 ./target/${{ matrix.target }}/release/${{ matrix.lib }}
       - name: Verify PHP extension loads
         run: |
           php -d extension=./target/${{ matrix.target }}/release/${{ matrix.lib }} -r "print_r(array_filter(get_defined_functions()['internal'], fn(\$f) => str_contains(\$f, 'oicana') || str_contains(\$f, 'register') || str_contains(\$f, 'compile')));"
@@ -559,7 +582,7 @@ jobs:
       - build-node-native
     steps:
       - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.98.1
       - uses: taiki-e/install-action@v2
         with:
           tool: typship
@@ -612,7 +635,7 @@ jobs:
       - build-browser-wasm
     steps:
       - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.98.1
       - uses: taiki-e/install-action@v2
         with:
           tool: typship
@@ -719,7 +742,7 @@ jobs:
         if: matrix.libc == 'gnu'
         with:
           python-version: ${{ matrix.python-version }}
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.98.1
       - uses: taiki-e/install-action@v2
         with:
           tool: typship
@@ -800,7 +823,7 @@ jobs:
       - build-php-native
     steps:
       - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.98.1
       - uses: taiki-e/install-action@v2
         with:
           tool: typship
@@ -865,6 +888,7 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
+            container: quay.io/pypa/manylinux_2_28_x86_64:2026.09.14-1
             target: x86_64-unknown-linux-gnu
             lib: liboicana_java_native.so
           - os: macos-latest
@@ -874,21 +898,25 @@ jobs:
             target: x86_64-pc-windows-msvc
             lib: oicana_java_native.dll
     runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v6
       - uses: actions/cache/restore@v5
         with:
-          key: ${{ runner.os }}-stable--${{ hashFiles('**/Cargo.toml', 'integrations/java/**/*.rs') }}-
+          key: ${{ runner.os }}-${{ matrix.container }}-stable--${{ hashFiles('**/Cargo.toml', 'integrations/java/**/*.rs') }}-
           restore-keys: |
-            ${{ runner.os }}-stable--${{ hashFiles('**/Cargo.toml', 'integrations/java/**/*.rs') }}-
-            ${{ runner.os }}-stable--
+            ${{ runner.os }}-${{ matrix.container }}-stable--${{ hashFiles('**/Cargo.toml', 'integrations/java/**/*.rs') }}-
+            ${{ runner.os }}-${{ matrix.container }}-stable--
           path: |
             ~/.cargo/bin/
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.98.1
         with:
           components: clippy
       - name: Run clippy
@@ -896,6 +924,9 @@ jobs:
         run: cargo clippy --all-targets --all-features -p oicana_java_native -- -Dwarnings
       - name: Build Java JNI library
         run: cargo build --release --target ${{ matrix.target }} -p oicana_java_native
+      - name: Assert glibc floor
+        if: matrix.container != ''
+        run: ./.github/scripts/assert-glibc-floor.sh 2.28 ./target/${{ matrix.target }}/release/${{ matrix.lib }}
       - name: Upload Java native library
         uses: actions/upload-artifact@v7
         with:
@@ -919,7 +950,7 @@ jobs:
       - build-java-native
     steps:
       - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.98.1
       - uses: taiki-e/install-action@v2
         with:
           tool: typship

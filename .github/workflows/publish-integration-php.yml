@@ -31,6 +31,7 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Setup PHP
+        if: matrix.platform.os != 'linux'
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
@@ -81,6 +82,10 @@ jobs:
     if: ${{ github.event_name == 'push' || inputs.publish-native }}
     name: Build ${{ matrix.platform.os }}-${{ matrix.platform.arch }}-php${{ matrix.php }}-${{ matrix.ts }}
     runs-on: ${{ matrix.platform.runner }}
+    container: ${{ matrix.platform.os == 'linux' && format('php:{0}-{1}-bookworm', matrix.php, matrix.ts == 'zts' && 'zts' || 'cli') || '' }}
+    defaults:
+      run:
+        shell: bash
     strategy:
       fail-fast: false
       matrix:
@@ -89,35 +94,35 @@ jobs:
             arch: x64
             runner: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            rust: stable
+            rust: 1.98.1
             lib: liboicana_php_native.so
             flags: "-C link-arg=-Wl,-undefined,dynamic_lookup"
           - os: linux
             arch: arm64
             runner: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
-            rust: stable
+            rust: 1.98.1
             lib: liboicana_php_native.so
             flags: "-C link-arg=-Wl,-undefined,dynamic_lookup"
           - os: macos
             arch: x64
             runner: macos-15-intel
             target: x86_64-apple-darwin
-            rust: stable
+            rust: 1.98.1
             lib: liboicana_php_native.dylib
             flags: "-C link-arg=-Wl,-undefined,dynamic_lookup"
           - os: macos
             arch: arm64
             runner: macos-latest
             target: aarch64-apple-darwin
-            rust: stable
+            rust: 1.98.1
             lib: liboicana_php_native.dylib
             flags: "-C link-arg=-Wl,-undefined,dynamic_lookup"
           - os: windows
             arch: x64
             runner: windows-latest
             target: x86_64-pc-windows-msvc
-            rust: nightly
+            rust: nightly-2026-09-01
             lib: oicana_php_native.dll
             flags: ""
         php:
@@ -130,19 +135,22 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
+      - name: Install libclang for bindgen
+        if: matrix.platform.os == 'linux'
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends libclang-dev
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.platform.rust }}
           targets: ${{ matrix.platform.target }}
-          components: rustfmt
       - run: rustup show
       - name: Remove preinstalled macOS PHP so setup-php installs the requested build
         # macOS runners preinstall NTS PHP (Homebrew `php`/`php@X.Y`). setup-php
         # detects an existing PHP via the Homebrew Cellar keg, and when the
-        # requested version matches it "switches to it" and ignores `phpts` (even
-        # with `update: true`, since the preinstalled is already the latest
-        # patch), so ZTS cells silently get NTS.
+        # requested version matches it "switches to it" and ignores `phpts`,
+        # so ZTS cells silently get NTS.
         if: matrix.platform.os == 'macos'
         run: |
           for f in $(brew list --formula 2>/dev/null | grep -E '^php($|@)'); do
@@ -150,6 +158,7 @@ jobs:
             brew uninstall --ignore-dependencies --force "$f" || true
           done
       - name: Setup PHP
+        if: matrix.platform.os != 'linux'
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
@@ -168,6 +177,12 @@ jobs:
           echo "active PHP thread safety: ${ACTUAL} (matrix ts=${{ matrix.ts }})"
           if [ "${ACTUAL}" != "${{ matrix.ts }}" ]; then
             echo "::error::matrix wants ${{ matrix.ts }} PHP but the active PHP is ${ACTUAL}"
+            exit 1
+          fi
+          ACTUAL_VERSION="$(php -r 'echo PHP_MAJOR_VERSION . "." . PHP_MINOR_VERSION;')"
+          echo "active PHP version: ${ACTUAL_VERSION} (matrix php=${{ matrix.php }})"
+          if [ "${ACTUAL_VERSION}" != "${{ matrix.php }}" ]; then
+            echo "::error::matrix wants PHP ${{ matrix.php }} but the active PHP is ${ACTUAL_VERSION}"
             exit 1
           fi
       - name: Compute PHP ABI for the cache key
@@ -196,6 +211,11 @@ jobs:
         run: cargo build --release --target ${{ matrix.platform.target }} -p oicana_php_native
         env:
           RUSTFLAGS: ${{ matrix.platform.flags }}
+      - name: Assert glibc floor
+        if: matrix.platform.os == 'linux'
+        run: |
+          ./.github/scripts/assert-glibc-floor.sh 2.35 \
+            ./target/${{ matrix.platform.target }}/release/${{ matrix.platform.lib }}
       - name: Verify PHP extension loads
         run: |
           php -d extension=./target/${{ matrix.platform.target }}/release/${{ matrix.platform.lib }} -r "print_r(array_filter(get_defined_functions()['internal'], fn(\$f) => str_contains(\$f, 'oicana') || str_contains(\$f, 'register') || str_contains(\$f, 'compile')));"

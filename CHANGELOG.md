@@ -10,10 +10,13 @@
 - `pack` no longer writes directory entries for directories that end up with no packed content, for example a directory whose files are all excluded
 - `pack` excludes `.git`, `.DS_Store` and `*.zip` by default
 - `pack` fails when a file cannot be read
+- `pack` now finds `import` and `include` of packages at any nesting depth
 
 ### Java
 - A JVM that has not granted native access now fails with an `OicanaException` naming the required `--enable-native-access` flag
 - All jars got valid module names
+- Detect link error and point to musl as likely explanation
+- The Linux libraries are now built against glibc 2.28
 
 ### Node.js
 - `engines` declares the actual minimum of `^20.19.0 || >=22.12.0`; the package is ESM-only, so CommonJS callers such as NestJS need a Node version with `require(esm)`
@@ -25,8 +28,13 @@
 
 ### C#
 - `BlobInput.Meta` is now `BlobInput.Metadata`
+- Support `linux-arm64`
+- The Linux libraries are now built against glibc 2.28
 - `ITemplate` and `IOicanaService` extend `IDisposable` so callers can release their resources
 - `OicanaService.RegisterTemplate` now replaces an already registered id and disposes the old template
+
+### PHP
+- The installer detects musl and fails with an explanation
 
 ### Rust
 - `Template::init_with_limits` and `Template::init_with_fonts_and_limits` take custom `ZipLimits`

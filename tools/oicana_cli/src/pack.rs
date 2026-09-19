@@ -9,14 +9,14 @@ use oicana::files::TemplateFiles;
 use oicana::template::package::package_with_dependencies;
 use std::collections::HashSet;
 use std::ffi::OsStr;
-use std::fs::{create_dir_all, read_dir, File};
+use std::fs::{create_dir_all, File};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
-use typst::syntax::ast::ModuleImport;
+use typst::syntax::ast::{ModuleImport, ModuleInclude};
 
 static PACKAGE: Emoji<'_, '_> = Emoji("📦", "");
 use typst::syntax::package::PackageSpec;
-use typst::syntax::{ast, FileId, RootedPath, VirtualPath, VirtualRoot};
+use typst::syntax::{ast, FileId, RootedPath, SyntaxNode, VirtualPath, VirtualRoot};
 
 #[derive(Debug, Args)]
 pub struct PackArgs {
@@ -121,128 +121,89 @@ fn collect_dependencies(
     let mut collected = HashSet::new();
     let mut result = Vec::new();
 
-    scan_imports_in_dir(root, root, files, &mut collected, &mut result)?;
+    scan_imports(
+        root,
+        &VirtualRoot::Project,
+        files,
+        &mut collected,
+        &mut result,
+    )?;
 
     Ok(result)
 }
 
-fn scan_imports_in_dir(
-    root: &Path,
+fn scan_imports(
     dir: &Path,
+    virtual_root: &VirtualRoot,
     files: &NativeTemplate,
     collected: &mut HashSet<PackageSpec>,
     result: &mut Vec<(PathBuf, PathBuf)>,
 ) -> anyhow::Result<()> {
-    if dir.file_name().and_then(OsStr::to_str) == Some(".dependencies") {
-        return Ok(());
-    }
-    for entry in read_dir(dir).context("Failed to read directory")? {
-        let entry = entry?;
-        let Ok(meta) = entry.metadata() else {
+    let walk = walkdir::WalkDir::new(dir)
+        .into_iter()
+        .filter_entry(|entry| entry.file_name() != OsStr::new(".dependencies"));
+    for entry in walk {
+        let entry = entry.context("Failed to read the directory to scan for imports")?;
+        let path = entry.path();
+        if !entry.file_type().is_file() || path.extension().and_then(OsStr::to_str) != Some("typ") {
             continue;
-        };
-        let path = dir.join(entry.file_name());
-        if meta.is_dir() {
-            scan_imports_in_dir(root, &path, files, collected, result)?;
         }
-        if path.extension().and_then(|ext| ext.to_str()) == Some("typ") {
-            let vpath = VirtualPath::virtualize(root, &path)
-                .context("Path virtualization failed even though `path` is built from `root`")?;
-            let fid = FileId::new(RootedPath::new(VirtualRoot::Project, vpath));
-            let source = files.source(fid).context("Can't read source file")?;
-            let imports = source
-                .root()
-                .children()
-                .filter_map(|ch| ch.cast::<ModuleImport>());
-            for import in imports {
-                let ast::Expr::Str(source_str) = import.source() else {
-                    continue;
-                };
 
-                if let Ok(import_spec) = PackageSpec::from_str(source_str.get().as_str()) {
-                    if collected.insert(import_spec.clone()) {
-                        let package_dir = files
-                            .package_dir(&import_spec)
-                            .context(format!("Failed to resolve package {import_spec}"))?;
+        let vpath = VirtualPath::virtualize(dir, path)
+            .context("Path virtualization failed even though `path` is built from `dir`")?;
+        let fid = FileId::new(RootedPath::new(virtual_root.clone(), vpath));
+        let source = files
+            .source(fid)
+            .context(format!("Can't read source file {}", path.display()))?;
 
-                        let zip_prefix = PathBuf::from(format!(
-                            ".dependencies/{}/{}/{}",
-                            import_spec.namespace, import_spec.name, import_spec.version
-                        ));
-                        result.push((package_dir.clone(), zip_prefix));
-
-                        // Recursively scan the package directory for transitive dependencies
-                        scan_imports_in_package(
-                            &package_dir,
-                            &import_spec,
-                            files,
-                            collected,
-                            result,
-                        )?;
-                    }
-                }
+        for literal in imported_literals(source.root()) {
+            let Ok(spec) = PackageSpec::from_str(literal.as_str()) else {
+                continue;
+            };
+            if !collected.insert(spec.clone()) {
+                continue;
             }
+
+            let package_dir = files.package_dir(&spec).context(format!(
+                "Failed to resolve package {spec} imported by {}",
+                path.display()
+            ))?;
+            let zip_prefix = PathBuf::from(format!(
+                ".dependencies/{}/{}/{}",
+                spec.namespace, spec.name, spec.version
+            ));
+            result.push((package_dir.clone(), zip_prefix));
+
+            scan_imports(
+                &package_dir,
+                &VirtualRoot::Package(spec),
+                files,
+                collected,
+                result,
+            )?;
         }
     }
 
     Ok(())
 }
 
-/// Scan a package directory for imports to find transitive dependencies.
-fn scan_imports_in_package(
-    package_dir: &Path,
-    package_spec: &PackageSpec,
-    files: &NativeTemplate,
-    collected: &mut HashSet<PackageSpec>,
-    result: &mut Vec<(PathBuf, PathBuf)>,
-) -> anyhow::Result<()> {
-    for entry in walkdir::WalkDir::new(package_dir)
-        .into_iter()
-        .filter_map(|e| e.ok())
-    {
-        let path = entry.path();
-        if path.extension().and_then(|ext| ext.to_str()) != Some("typ") {
-            continue;
-        }
+fn imported_literals(node: &SyntaxNode) -> Vec<String> {
+    let mut found = Vec::new();
+    collect_imported_literals(node, &mut found);
+    found
+}
 
-        let vpath = VirtualPath::virtualize(package_dir, path)
-            .context("Path virtualization failed even though `path` is inside `package_dir`")?;
-        let fid = FileId::new(RootedPath::new(
-            VirtualRoot::Package(package_spec.clone()),
-            vpath,
-        ));
-        let source = files
-            .source(fid)
-            .context("Can't read source file in package")?;
-        let imports = source
-            .root()
-            .children()
-            .filter_map(|ch| ch.cast::<ModuleImport>());
-
-        for import in imports {
-            let ast::Expr::Str(source_str) = import.source() else {
-                continue;
-            };
-
-            if let Ok(import_spec) = PackageSpec::from_str(source_str.get().as_str()) {
-                if collected.insert(import_spec.clone()) {
-                    let dep_dir = files.package_dir(&import_spec).context(format!(
-                        "Failed to resolve transitive package {import_spec}"
-                    ))?;
-
-                    let zip_prefix = PathBuf::from(format!(
-                        ".dependencies/{}/{}/{}",
-                        import_spec.namespace, import_spec.name, import_spec.version
-                    ));
-                    result.push((dep_dir.clone(), zip_prefix));
-
-                    scan_imports_in_package(&dep_dir, &import_spec, files, collected, result)?;
-                }
-            }
-        }
+fn collect_imported_literals(node: &SyntaxNode, found: &mut Vec<String>) {
+    let source = node
+        .cast::<ModuleImport>()
+        .map(|import| import.source())
+        .or_else(|| node.cast::<ModuleInclude>().map(|include| include.source()));
+    if let Some(ast::Expr::Str(literal)) = source {
+        found.push(literal.get().to_string());
     }
-
-    Ok(())
+    for child in node.children() {
+        collect_imported_literals(child, found);
+    }
 }
 
 #[cfg(test)]
@@ -328,6 +289,80 @@ entrypoint = "package.typ"
             temp_template.join(".dependencies").try_exists().ok(),
             Some(false)
         );
+    }
+
+    #[test]
+    fn collects_a_package_once_even_when_imported_repeatedly() {
+        let tempdir = tempdir().unwrap();
+        let temp_template = tempdir.path().join("template");
+        create_dir_all(temp_template.join("sub")).unwrap();
+        let temp_packages = tempdir.path().join("cache");
+
+        for file in ["a.typ", "b.typ", "sub/c.typ"] {
+            File::create(temp_template.join(file))
+                .unwrap()
+                .write_all(b"#import \"@local/test:0.1.0\": *")
+                .unwrap();
+        }
+        let spec = PackageSpec::from_str("@local/test:0.1.0").unwrap();
+        create_mock_package(&temp_packages, &spec, "Some package content");
+
+        let files = NativeTemplate::new(&temp_template, temp_packages);
+        let deps = collect_dependencies(&temp_template, &files).unwrap();
+
+        assert_eq!(deps.len(), 1, "the package should be packed once: {deps:?}");
+    }
+
+    #[test]
+    fn terminates_on_cyclic_package_dependencies() {
+        let tempdir = tempdir().unwrap();
+        let temp_template = tempdir.path().join("template");
+        create_dir_all(&temp_template).unwrap();
+        let temp_packages = tempdir.path().join("cache");
+
+        File::create(temp_template.join("test.typ"))
+            .unwrap()
+            .write_all(b"#import \"@local/first:0.1.0\": *")
+            .unwrap();
+
+        let first = PackageSpec::from_str("@local/first:0.1.0").unwrap();
+        let second = PackageSpec::from_str("@local/second:0.1.0").unwrap();
+        create_mock_package(&temp_packages, &first, "#import \"@local/second:0.1.0\": *");
+        create_mock_package(&temp_packages, &second, "#import \"@local/first:0.1.0\": *");
+
+        let files = NativeTemplate::new(&temp_template, temp_packages);
+        let deps = collect_dependencies(&temp_template, &files).unwrap();
+
+        assert_eq!(deps.len(), 2, "both packages exactly once: {deps:?}");
+    }
+
+    #[test]
+    fn resolves_nested_imports_and_includes() {
+        for markup in [
+            "#let helper() = {\n  import \"@local/test:0.1.0\": *\n  [hi]\n}",
+            "#{\n  import \"@local/test:0.1.0\": *\n}",
+            "#if true {\n  import \"@local/test:0.1.0\": *\n}",
+            "#include \"@local/test:0.1.0\"",
+            "#{\n  include \"@local/test:0.1.0\"\n}",
+        ] {
+            let tempdir = tempdir().unwrap();
+            let temp_template = tempdir.path().join("template");
+            create_dir_all(&temp_template).unwrap();
+            let temp_packages = tempdir.path().join("cache");
+            File::create(temp_template.join("test.typ"))
+                .unwrap()
+                .write_all(markup.as_bytes())
+                .unwrap();
+
+            let spec = PackageSpec::from_str("@local/test:0.1.0").unwrap();
+            create_mock_package(&temp_packages, &spec, "Some package content");
+
+            let files = NativeTemplate::new(&temp_template, temp_packages);
+            let deps = collect_dependencies(&temp_template, &files).unwrap();
+
+            assert_eq!(deps.len(), 1, "expected a dependency for {markup:?}");
+            assert_eq!(deps[0].1, PathBuf::from(".dependencies/local/test/0.1.0"));
+        }
     }
 
     #[test]

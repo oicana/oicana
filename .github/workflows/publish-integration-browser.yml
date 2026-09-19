@@ -26,9 +26,8 @@ jobs:
         with:
           node-version: 24
       - name: Install rust toolchain
-        uses: dtolnay/rust-toolchain@master
+        uses: dtolnay/rust-toolchain@1.98.1
         with:
-          toolchain: stable
           targets: wasm32-unknown-unknown
       - uses: taiki-e/install-action@v2
         with:

@@ -34,9 +34,34 @@ final class PlatformDetector
         return match (PHP_OS_FAMILY) {
             'Windows' => 'windows',
             'Darwin' => 'macos',
-            'Linux' => 'linux',
+            'Linux' => $this->detectLinux(),
             default => throw new \RuntimeException('Unsupported OS: ' . PHP_OS_FAMILY),
         };
+    }
+
+    /**
+     * Detect Linux, rejecting musl based systems.
+     *
+     * @throws \RuntimeException If the system uses musl
+     */
+    private function detectLinux(): string
+    {
+        if ($this->isMusl()) {
+            throw new \RuntimeException(
+                'Unsupported platform: there is no musl build of the Oicana extension, and this '
+                . 'system uses musl (Alpine and other musl based distributions).'
+            );
+        }
+
+        return 'linux';
+    }
+
+    /**
+     * Whether the C library is musl rather than glibc.
+     */
+    private function isMusl(): bool
+    {
+        return !empty(glob('/lib/ld-musl-*.so.1')) || !empty(glob('/lib/libc.musl-*.so.1'));
     }
 
     /**

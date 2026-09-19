@@ -44,6 +44,14 @@ class NativeLoader {
                                 + " when Oicana is on the module path), or add"
                                 + " 'Enable-Native-Access: ALL-UNNAMED' to the manifest of your executable jar.",
                         e);
+            } catch (UnsatisfiedLinkError e) {
+                throw new OicanaException(
+                        "Failed to load the native library for " + os + "-" + arch + "."
+                                + (os.equals("linux")
+                                        ? " The Linux builds link against glibc, so this is expected on"
+                                                + " musl based distributions such as Alpine."
+                                        : ""),
+                        e);
             }
             loaded = true;
         } catch (IOException e) {
