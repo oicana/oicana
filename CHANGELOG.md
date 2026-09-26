@@ -16,6 +16,7 @@
 - `pack` now finds `import` and `include` of packages at any nesting depth
 - `pack` leaves out the files a packaged dependency excludes in its own `typst.toml`
 - `compile` and `watch` fail for blob metadata (`-m`) without a matching blob (`-b`) and for badly formatted key-value pairs
+- `validate` rejects `tagged = false` combined with a standard that requires tags (`ua-1`, `a-1a`, `a-2a`, `a-3a`)
 
 ### Java
 - A JVM that has not granted native access now fails with an `OicanaException` naming the required `--enable-native-access` flag

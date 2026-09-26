@@ -51,6 +51,17 @@ pub fn validate_pdf_standards(standards: &[oicana_template::PdfStandard]) -> Res
         .map_err(|e| format!("Invalid combination of PDF standards: {}", e.message()))
 }
 
+/// Check that no standard requires a tagged PDF when the template disables tagging.
+pub fn validate_pdf_tagging(
+    standards: &[oicana_template::PdfStandard],
+    tagged: bool,
+) -> Result<(), String> {
+    match standards.iter().find(|s| !tagged && requires_tagging(**s)) {
+        Some(standard) => Err(PdfExportError::TaggingDisabled(*standard).to_string()),
+        None => Ok(()),
+    }
+}
+
 /// An error that occurred while exporting a document to PDF.
 #[derive(Debug, Error)]
 pub enum PdfExportError {
@@ -414,6 +425,19 @@ mod tests {
         ])
         .unwrap_err();
         assert!(err.contains("Invalid combination of PDF standards"));
+    }
+
+    #[test]
+    fn validate_pdf_tagging_rejects_standards_requiring_tags_when_untagged() {
+        for standard in ALL_STANDARDS {
+            assert!(validate_pdf_tagging(&[standard], true).is_ok());
+            let result = validate_pdf_tagging(&[standard], false);
+            if requires_tagging(standard) {
+                assert!(result.unwrap_err().contains("disables tagging"));
+            } else {
+                assert!(result.is_ok());
+            }
+        }
     }
 
     #[test]
