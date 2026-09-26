@@ -2,6 +2,7 @@
 
 from .template import (
     CompiledDocument,
+    OicanaError,
     Template,
     clear_fonts,
     configure_automatic_cache_eviction,
@@ -41,6 +42,7 @@ __version__ = "0.9.0rc5"
 __all__ = [
     "Template",
     "CompiledDocument",
+    "OicanaError",
     "configure_automatic_cache_eviction",
     "configure_diagnostic_color",
     "evict_cache",

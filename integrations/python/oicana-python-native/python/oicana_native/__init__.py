@@ -2,6 +2,7 @@
 from .oicana_native import (
     BlobWithMetadata,
     CompilationMode,
+    OicanaError,
     clear_fonts,
     compile_template,
     configure_automatic_cache_eviction,
@@ -26,6 +27,7 @@ from .oicana_native import (
 __all__ = [
     "BlobWithMetadata",
     "CompilationMode",
+    "OicanaError",
     "clear_fonts",
     "compile_template",
     "configure_automatic_cache_eviction",

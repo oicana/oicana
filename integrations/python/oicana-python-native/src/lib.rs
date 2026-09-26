@@ -9,6 +9,13 @@ use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict};
 
+pyo3::create_exception!(
+    oicana_native,
+    OicanaError,
+    PyRuntimeError,
+    "An Oicana operation failed."
+);
+
 /// Compilation mode enum
 #[pyclass(eq, eq_int, from_py_object)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -325,7 +332,7 @@ fn into_core_blobs(
 }
 
 fn into_py_err(error: oicana_ffi_core::FfiError) -> PyErr {
-    PyRuntimeError::new_err(error.to_string())
+    OicanaError::new_err(error.to_string())
 }
 
 #[pymodule]
@@ -349,6 +356,7 @@ fn oicana_native(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(register_font_paths, m)?)?;
     m.add_function(wrap_pyfunction!(registered_fonts, m)?)?;
     m.add_function(wrap_pyfunction!(clear_fonts, m)?)?;
+    m.add("OicanaError", m.py().get_type::<OicanaError>())?;
     m.add_class::<CompilationMode>()?;
     m.add_class::<BlobWithMetadata>()?;
     Ok(())

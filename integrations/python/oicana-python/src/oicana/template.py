@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 
 from oicana_native import (
     BlobWithMetadata,
+    OicanaError,
     compile_template,
     document_pages,
     export_document,
@@ -478,7 +479,7 @@ class CompiledDocument:
             pages: 0-based, inclusive page range (defaults to the whole document)
         """
         if self._document_id is None:
-            raise RuntimeError("CompiledDocument has already been closed")
+            raise OicanaError("CompiledDocument has already been closed")
         return bytes(
             export_document(
                 self._document_id, _serialize_export_format(export), _serialize_page_range(pages)
