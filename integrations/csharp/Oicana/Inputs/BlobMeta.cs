@@ -25,7 +25,7 @@ public class BlobMeta
     /// </summary>
     public JsonObject Build()
     {
-        var meta = Custom ?? new JsonObject();
+        var meta = Custom?.DeepClone().AsObject() ?? new JsonObject();
 
         if (ImageFormat != null)
         {

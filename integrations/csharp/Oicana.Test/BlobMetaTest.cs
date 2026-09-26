@@ -108,4 +108,16 @@ public class BlobMetaTest
         meta.Build().ToString().Should().Be(
             JsonNode.Parse("{}")!.AsObject().ToString());
     }
+
+    [Fact]
+    public void BuildLeavesTheCustomObjectUntouched()
+    {
+        var custom = new JsonObject { ["dpi"] = 300 };
+        var png = new BlobMeta { ImageFormat = "png", Custom = custom };
+        var jpg = new BlobMeta { ImageFormat = "jpg", Custom = custom };
+
+        png.Build()["image_format"]!.GetValue<string>().Should().Be("png");
+        jpg.Build()["image_format"]!.GetValue<string>().Should().Be("jpg");
+        custom.ContainsKey("image_format").Should().BeFalse();
+    }
 }
