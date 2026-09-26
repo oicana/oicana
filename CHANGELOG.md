@@ -48,6 +48,7 @@
 - The Linux libraries are now built against glibc 2.28
 - `ITemplate` and `IOicanaService` extend `IDisposable` so callers can release their resources
 - `OicanaService.RegisterTemplate` now replaces an already registered id and disposes the old template
+- Added `OicanaService.RegisterTemplate(id, template)` to register an already created template
 - `CompilationOptions` is gone; the export and compile methods take a `CompilationMode` directly, defaulting to `Production`
 - `jsonInputs`, `blobInputs` and `exportFormat` are optional on every export and compile method, and on the `Template` constructor
 - `Configuration.DiagnosticsColoring(DiagnosticsColoring)` is now `Configuration.ConfigureDiagnosticColor(DiagnosticColor)`, and `DiagnosticColor` moved from `Oicana.Interop` to `Oicana.Config`

@@ -10,19 +10,21 @@ namespace Oicana.Test;
 
 public class OicanaServiceTests
 {
-    private static byte[] PackTemplate(string pageWidth)
+    private const string Manifest = """
+        [package]
+        name = "service-test"
+        version = "0.1.0"
+        entrypoint = "main.typ"
+
+        [tool.oicana]
+        manifest_version = 1
+        """;
+
+    private static byte[] PackTemplate(string pageWidth) =>
+        Pack(Manifest, $"#set page(width: {pageWidth}, height: 100pt)\nContent");
+
+    private static byte[] Pack(string manifest, string mainTypst)
     {
-        const string manifest = """
-            [package]
-            name = "service-test"
-            version = "0.1.0"
-            entrypoint = "main.typ"
-
-            [tool.oicana]
-            manifest_version = 1
-            """;
-        var mainTypst = $"#set page(width: {pageWidth}, height: 100pt)\nContent";
-
         using var stream = new MemoryStream();
         using (var zip = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: true))
         {
@@ -94,5 +96,43 @@ public class OicanaServiceTests
         removed.Should().NotBeNull();
         service.GetTemplate("invoice").Should().BeNull();
         removed!.Dispose();
+    }
+
+    [Fact]
+    public void RegistersATemplateThatNeedsWarmUpInputs()
+    {
+        var file = Pack(Manifest + """
+
+            [[tool.oicana.inputs]]
+            type = "json"
+            key = "width"
+            """,
+            """
+            #let width = json(bytes(sys.inputs.at("oicana-inputs").at("width")))
+            #set page(width: width * 1pt, height: 100pt)
+            Content
+            """);
+        var inputs = new Dictionary<string, JsonNode> { ["width"] = 300 };
+        using var service = CreateService();
+
+        var withoutInputs = () => service.RegisterTemplate("sized", file);
+        withoutInputs.Should().Throw<OicanaException>();
+
+        service.RegisterTemplate("sized", new Template(file, inputs));
+
+        using var svg = service.GetTemplate("sized")!.Export(inputs, exportFormat: Config.ExportFormat.Svg());
+        new StreamReader(svg).ReadToEnd().Should().Contain("300pt");
+    }
+
+    [Fact]
+    public void RegisteringTheSameTemplateAgainKeepsItUsable()
+    {
+        using var service = CreateService();
+        var template = new Template(PackTemplate("100pt"));
+        service.RegisterTemplate("invoice", template);
+
+        service.RegisterTemplate("invoice", template);
+
+        ExportSvg(service.GetTemplate("invoice")!).Should().Contain("100pt");
     }
 }
