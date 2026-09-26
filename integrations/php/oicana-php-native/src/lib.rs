@@ -13,12 +13,22 @@ use std::collections::HashMap;
 use ext_php_rs::binary::Binary;
 use ext_php_rs::binary_slice::BinarySlice;
 use ext_php_rs::prelude::*;
+use ext_php_rs::zend::{ce, ClassEntry};
 use oicana_ffi_core::panic_message;
+
+/// An exception of the wrapper's `Oicana\OicanaException`, or `\RuntimeException` when the
+/// extension is used without the wrapper.
+fn oicana_exception(message: String) -> PhpException {
+    let class = ClassEntry::try_find("Oicana\\OicanaException")
+        .or_else(|| ClassEntry::try_find("RuntimeException"))
+        .unwrap_or_else(ce::exception);
+    PhpException::new(message, 0, class)
+}
 
 /// Run `body`, converting any panic into a [`PhpException`].
 fn catch_panic<T>(body: impl FnOnce() -> PhpResult<T>) -> PhpResult<T> {
     std::panic::catch_unwind(std::panic::AssertUnwindSafe(body)).unwrap_or_else(|payload| {
-        Err(PhpException::default(format!(
+        Err(oicana_exception(format!(
             "internal panic: {}",
             panic_message(payload.as_ref())
         )))
@@ -111,7 +121,7 @@ fn zip_limits_from_args(
     max_total_decompressed_bytes: Option<i64>,
 ) -> PhpResult<Option<oicana_ffi_core::ZipLimits>> {
     oicana_ffi_core::ZipLimits::from_signed(max_entries, max_total_decompressed_bytes)
-        .map_err(|error| PhpException::default(error.to_string()))
+        .map_err(|error| oicana_exception(error.to_string()))
 }
 
 /// Register the given template. This will read the template files as a PackedTemplate and
@@ -241,7 +251,7 @@ pub fn register_font_paths(paths: Vec<String>) -> PhpResult<i64> {
 pub fn registered_fonts() -> PhpResult<String> {
     catch_panic(|| {
         serde_json::to_string(&oicana_ffi_core::registered_fonts()).map_err(|error| {
-            PhpException::default(format!("Failed to serialize registered fonts: {error}"))
+            oicana_exception(format!("Failed to serialize registered fonts: {error}"))
         })
     })
 }
@@ -404,7 +414,7 @@ fn into_core_blobs(
 }
 
 fn into_php_err(error: oicana_ffi_core::FfiError) -> PhpException {
-    PhpException::default(error.to_string())
+    oicana_exception(error.to_string())
 }
 
 /// Registers the PHP module with ext-php-rs.

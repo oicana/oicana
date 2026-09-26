@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Oicana\CompilationMode;
 use Oicana\ExportFormat;
 use Oicana\Inputs\BlobInput;
+use Oicana\OicanaException;
 use Oicana\Template;
 
 beforeEach(function () {
@@ -259,5 +260,9 @@ test('template packed by a newer Oicana is refused', function () {
     $templateBytes = file_get_contents(assets_path('templates/future-manifest-0.1.0.zip'));
 
     expect(fn () => new Template($templateBytes))
-        ->toThrow(Exception::class, 'manifest_version 99');
+        ->toThrow(OicanaException::class, 'manifest_version 99');
+});
+
+test('oicana exceptions are runtime exceptions', function () {
+    expect(new OicanaException('failed'))->toBeInstanceOf(RuntimeException::class);
 });
