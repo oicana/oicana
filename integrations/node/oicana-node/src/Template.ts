@@ -85,14 +85,14 @@ export class Template implements Disposable {
    * @param template - the packed Oicana template file
    * @param jsonInputs - for the initial compilation to warm up the cache (defaults to empty map)
    * @param blobInputs - for the initial compilation to warm up the cache (defaults to empty map)
-   * @param compilationOptions - for the initial compilation to warm up the cache (defaults to Development)
+   * @param mode - for the initial compilation to warm up the cache (defaults to Development)
    * @param limits - for reading the template zip (defaults apply when omitted)
    */
   public constructor(
     template: Uint8Array,
     jsonInputs?: Map<string, string>,
     blobInputs?: Map<string, BlobInput>,
-    compilationOptions?: CompilationMode,
+    mode?: CompilationMode,
     limits?: ZipLimits,
   );
 
@@ -100,7 +100,7 @@ export class Template implements Disposable {
     template: Uint8Array | CompletedRegistration,
     jsonInputs?: Map<string, string>,
     blobInputs?: Map<string, BlobInput>,
-    compilationOptions?: CompilationMode,
+    mode?: CompilationMode,
     limits?: ZipLimits,
   ) {
     if (isCompletedRegistration(template)) {
@@ -122,9 +122,7 @@ export class Template implements Disposable {
       template,
       Object.fromEntries(jsonInputs ?? new Map<string, string>()),
       Template.convertBlobInputs(blobInputs ?? new Map<string, BlobInput>()),
-      Template.mapCompilationMode(
-        compilationOptions ?? CompilationMode.Development,
-      ),
+      Template.mapCompilationMode(mode ?? CompilationMode.Development),
       limits,
     );
     this.lastWarnings = getWarnings(documentId) ?? undefined;
@@ -140,14 +138,14 @@ export class Template implements Disposable {
    * @param template - the packed Oicana template file
    * @param jsonInputs - for the initial compilation to warm up the cache (defaults to empty map)
    * @param blobInputs - for the initial compilation to warm up the cache (defaults to empty map)
-   * @param compilationOptions - for the initial compilation to warm up the cache (defaults to Development)
+   * @param mode - for the initial compilation to warm up the cache (defaults to Development)
    * @param limits - for reading the template zip (defaults apply when omitted)
    */
   public static async create(
     template: Uint8Array,
     jsonInputs?: Map<string, string>,
     blobInputs?: Map<string, BlobInput>,
-    compilationOptions?: CompilationMode,
+    mode?: CompilationMode,
     limits?: ZipLimits,
   ): Promise<Template> {
     const templateId = randomUUID();
@@ -157,9 +155,7 @@ export class Template implements Disposable {
       template,
       Object.fromEntries(jsonInputs ?? new Map<string, string>()),
       Template.convertBlobInputs(blobInputs ?? new Map<string, BlobInput>()),
-      Template.mapCompilationMode(
-        compilationOptions ?? CompilationMode.Development,
-      ),
+      Template.mapCompilationMode(mode ?? CompilationMode.Development),
       limits,
     );
     const warnings = getWarnings(documentId) ?? undefined;
@@ -182,8 +178,8 @@ export class Template implements Disposable {
    * @param template - the packed Oicana template file
    * @param jsonInputs - JSON inputs for the template (defaults to empty map)
    * @param blobInputs - Blob inputs for the template (defaults to empty map)
-   * @param exportOptions - Export format specification (defaults to PDF)
-   * @param compilationOptions - Compilation mode (defaults to Production)
+   * @param exportFormat - Export format specification (defaults to PDF)
+   * @param mode - Compilation mode (defaults to Production)
    * @param pages - 0-based, inclusive page range (defaults to the whole document)
    * @param limits - limits for reading the template zip (defaults apply when omitted)
    */
@@ -191,8 +187,8 @@ export class Template implements Disposable {
     template: Uint8Array,
     jsonInputs?: Map<string, string>,
     blobInputs?: Map<string, BlobInput>,
-    exportOptions?: ExportFormat,
-    compilationOptions?: CompilationMode,
+    exportFormat?: ExportFormat,
+    mode?: CompilationMode,
     pages?: PageRange,
     limits?: ZipLimits,
   ): ExportOnceResult {
@@ -200,10 +196,8 @@ export class Template implements Disposable {
       template,
       Object.fromEntries(jsonInputs ?? new Map<string, string>()),
       Template.convertBlobInputs(blobInputs ?? new Map<string, BlobInput>()),
-      Template.mapCompilationMode(
-        compilationOptions ?? CompilationMode.Production,
-      ),
-      JSON.stringify(exportOptions ?? Pdf),
+      Template.mapCompilationMode(mode ?? CompilationMode.Production),
+      JSON.stringify(exportFormat ?? Pdf),
       serializePageRange(pages),
       limits,
     );
@@ -218,8 +212,8 @@ export class Template implements Disposable {
    * @param template - the packed Oicana template file
    * @param jsonInputs - JSON inputs for the template (defaults to empty map)
    * @param blobInputs - Blob inputs for the template (defaults to empty map)
-   * @param exportOptions - Export format specification (defaults to PDF)
-   * @param compilationOptions - Compilation mode (defaults to Production)
+   * @param exportFormat - Export format specification (defaults to PDF)
+   * @param mode - Compilation mode (defaults to Production)
    * @param pages - 0-based, inclusive page range (defaults to the whole document)
    * @param limits - limits for reading the template zip (defaults apply when omitted)
    */
@@ -227,8 +221,8 @@ export class Template implements Disposable {
     template: Uint8Array,
     jsonInputs?: Map<string, string>,
     blobInputs?: Map<string, BlobInput>,
-    exportOptions?: ExportFormat,
-    compilationOptions?: CompilationMode,
+    exportFormat?: ExportFormat,
+    mode?: CompilationMode,
     pages?: PageRange,
     limits?: ZipLimits,
   ): Promise<ExportOnceResult> {
@@ -236,10 +230,8 @@ export class Template implements Disposable {
       template,
       Object.fromEntries(jsonInputs ?? new Map<string, string>()),
       Template.convertBlobInputs(blobInputs ?? new Map<string, BlobInput>()),
-      Template.mapCompilationMode(
-        compilationOptions ?? CompilationMode.Production,
-      ),
-      JSON.stringify(exportOptions ?? Pdf),
+      Template.mapCompilationMode(mode ?? CompilationMode.Production),
+      JSON.stringify(exportFormat ?? Pdf),
       serializePageRange(pages),
       limits,
     );
@@ -267,41 +259,41 @@ export class Template implements Disposable {
    * Compile the template with the given inputs and export it in the given format.
    * @param jsonInputs
    * @param blobInputs
-   * @param exportOptions
+   * @param exportFormat
    */
   public export(
     jsonInputs: Map<string, string>,
     blobInputs: Map<string, BlobInput>,
-    exportOptions: ExportFormat,
+    exportFormat: ExportFormat,
   ): Uint8Array;
 
   /**
    * Compile the template with the given inputs and export it in the given format.
    * @param jsonInputs
    * @param blobInputs
-   * @param exportOptions
-   * @param compilationOptions
+   * @param exportFormat
+   * @param mode
    */
   public export(
     jsonInputs: Map<string, string>,
     blobInputs: Map<string, BlobInput>,
-    exportOptions: ExportFormat,
-    compilationOptions: CompilationMode,
+    exportFormat: ExportFormat,
+    mode: CompilationMode,
   ): Uint8Array;
 
   /**
    * Compile the template with the given inputs and export a range of pages
    * @param jsonInputs
    * @param blobInputs
-   * @param exportOptions
-   * @param compilationOptions
+   * @param exportFormat
+   * @param mode
    * @param pages
    */
   public export(
     jsonInputs: Map<string, string>,
     blobInputs: Map<string, BlobInput>,
-    exportOptions: ExportFormat,
-    compilationOptions: CompilationMode,
+    exportFormat: ExportFormat,
+    mode: CompilationMode,
     pages: PageRange,
   ): Uint8Array;
 
@@ -314,22 +306,22 @@ export class Template implements Disposable {
    * {@link CompiledDocument}.
    * @param jsonInputs - JSON inputs for the template (defaults to empty map)
    * @param blobInputs - Blob inputs for the template (defaults to empty map)
-   * @param exportOptions - Export format specification (defaults to PDF)
-   * @param compilationOptions - Compilation mode (defaults to Production)
+   * @param exportFormat - Export format specification (defaults to PDF)
+   * @param mode - Compilation mode (defaults to Production)
    * @param pages - 0-based, inclusive page range (defaults to the whole document)
    */
   public export(
     jsonInputs?: Map<string, string>,
     blobInputs?: Map<string, BlobInput>,
-    exportOptions?: ExportFormat,
-    compilationOptions?: CompilationMode,
+    exportFormat?: ExportFormat,
+    mode?: CompilationMode,
     pages?: PageRange,
   ): Uint8Array {
     return this.exportWith(
-      exportOptions ?? Pdf,
+      exportFormat ?? Pdf,
       jsonInputs,
       blobInputs,
-      compilationOptions,
+      mode,
       pages,
     );
   }
@@ -342,22 +334,22 @@ export class Template implements Disposable {
    * compilation and export run.
    * @param jsonInputs - JSON inputs for the template (defaults to empty map)
    * @param blobInputs - Blob inputs for the template (defaults to empty map)
-   * @param exportOptions - Export format specification (defaults to PDF)
-   * @param compilationOptions - Compilation mode (defaults to Production)
+   * @param exportFormat - Export format specification (defaults to PDF)
+   * @param mode - Compilation mode (defaults to Production)
    * @param pages - 0-based, inclusive page range (defaults to the whole document)
    */
   public exportAsync(
     jsonInputs?: Map<string, string>,
     blobInputs?: Map<string, BlobInput>,
-    exportOptions?: ExportFormat,
-    compilationOptions?: CompilationMode,
+    exportFormat?: ExportFormat,
+    mode?: CompilationMode,
     pages?: PageRange,
   ): Promise<Uint8Array> {
     return this.exportWithAsync(
-      exportOptions ?? Pdf,
+      exportFormat ?? Pdf,
       jsonInputs,
       blobInputs,
-      compilationOptions,
+      mode,
       pages,
     );
   }
@@ -368,22 +360,16 @@ export class Template implements Disposable {
    * Tagging will be automatically turned off when exporting a subset of pages.
    * @param jsonInputs - JSON inputs for the template (defaults to empty map)
    * @param blobInputs - Blob inputs for the template (defaults to empty map)
-   * @param compilationOptions - Compilation mode (defaults to Production)
+   * @param mode - Compilation mode (defaults to Production)
    * @param pages - 0-based, inclusive page range (defaults to the whole document)
    */
   public exportPdf(
     jsonInputs?: Map<string, string>,
     blobInputs?: Map<string, BlobInput>,
-    compilationOptions?: CompilationMode,
+    mode?: CompilationMode,
     pages?: PageRange,
   ): Uint8Array {
-    return this.exportWith(
-      Pdf,
-      jsonInputs,
-      blobInputs,
-      compilationOptions,
-      pages,
-    );
+    return this.exportWith(Pdf, jsonInputs, blobInputs, mode, pages);
   }
 
   /**
@@ -393,22 +379,16 @@ export class Template implements Disposable {
    * Tagging will be automatically turned off when exporting a subset of pages.
    * @param jsonInputs - JSON inputs for the template (defaults to empty map)
    * @param blobInputs - Blob inputs for the template (defaults to empty map)
-   * @param compilationOptions - Compilation mode (defaults to Production)
+   * @param mode - Compilation mode (defaults to Production)
    * @param pages - 0-based, inclusive page range (defaults to the whole document)
    */
   public exportPdfAsync(
     jsonInputs?: Map<string, string>,
     blobInputs?: Map<string, BlobInput>,
-    compilationOptions?: CompilationMode,
+    mode?: CompilationMode,
     pages?: PageRange,
   ): Promise<Uint8Array> {
-    return this.exportWithAsync(
-      Pdf,
-      jsonInputs,
-      blobInputs,
-      compilationOptions,
-      pages,
-    );
+    return this.exportWithAsync(Pdf, jsonInputs, blobInputs, mode, pages);
   }
 
   /**
@@ -417,14 +397,14 @@ export class Template implements Disposable {
    * Multiple pages are merged into a single, vertically stacked image.
    * @param jsonInputs - JSON inputs for the template (defaults to empty map)
    * @param blobInputs - Blob inputs for the template (defaults to empty map)
-   * @param compilationOptions - Compilation mode (defaults to Production)
+   * @param mode - Compilation mode (defaults to Production)
    * @param pixelsPerPt - resolution in pixels per point (defaults to 1.0)
    * @param pages - 0-based, inclusive page range (defaults to the whole document)
    */
   public exportPng(
     jsonInputs?: Map<string, string>,
     blobInputs?: Map<string, BlobInput>,
-    compilationOptions?: CompilationMode,
+    mode?: CompilationMode,
     pixelsPerPt = 1.0,
     pages?: PageRange,
   ): Uint8Array {
@@ -432,7 +412,7 @@ export class Template implements Disposable {
       Png(pixelsPerPt),
       jsonInputs,
       blobInputs,
-      compilationOptions,
+      mode,
       pages,
     );
   }
@@ -444,14 +424,14 @@ export class Template implements Disposable {
    * Multiple pages are merged into a single, vertically stacked image.
    * @param jsonInputs - JSON inputs for the template (defaults to empty map)
    * @param blobInputs - Blob inputs for the template (defaults to empty map)
-   * @param compilationOptions - Compilation mode (defaults to Production)
+   * @param mode - Compilation mode (defaults to Production)
    * @param pixelsPerPt - resolution in pixels per point (defaults to 1.0)
    * @param pages - 0-based, inclusive page range (defaults to the whole document)
    */
   public exportPngAsync(
     jsonInputs?: Map<string, string>,
     blobInputs?: Map<string, BlobInput>,
-    compilationOptions?: CompilationMode,
+    mode?: CompilationMode,
     pixelsPerPt = 1.0,
     pages?: PageRange,
   ): Promise<Uint8Array> {
@@ -459,7 +439,7 @@ export class Template implements Disposable {
       Png(pixelsPerPt),
       jsonInputs,
       blobInputs,
-      compilationOptions,
+      mode,
       pages,
     );
   }
@@ -469,22 +449,16 @@ export class Template implements Disposable {
    * document.
    * @param jsonInputs - JSON inputs for the template (defaults to empty map)
    * @param blobInputs - Blob inputs for the template (defaults to empty map)
-   * @param compilationOptions - Compilation mode (defaults to Production)
+   * @param mode - Compilation mode (defaults to Production)
    * @param pages - 0-based, inclusive page range (defaults to the whole document)
    */
   public exportSvg(
     jsonInputs?: Map<string, string>,
     blobInputs?: Map<string, BlobInput>,
-    compilationOptions?: CompilationMode,
+    mode?: CompilationMode,
     pages?: PageRange,
   ): Uint8Array {
-    return this.exportWith(
-      Svg,
-      jsonInputs,
-      blobInputs,
-      compilationOptions,
-      pages,
-    );
+    return this.exportWith(Svg, jsonInputs, blobInputs, mode, pages);
   }
 
   /**
@@ -493,36 +467,26 @@ export class Template implements Disposable {
    * work runs.
    * @param jsonInputs - JSON inputs for the template (defaults to empty map)
    * @param blobInputs - Blob inputs for the template (defaults to empty map)
-   * @param compilationOptions - Compilation mode (defaults to Production)
+   * @param mode - Compilation mode (defaults to Production)
    * @param pages - 0-based, inclusive page range (defaults to the whole document)
    */
   public exportSvgAsync(
     jsonInputs?: Map<string, string>,
     blobInputs?: Map<string, BlobInput>,
-    compilationOptions?: CompilationMode,
+    mode?: CompilationMode,
     pages?: PageRange,
   ): Promise<Uint8Array> {
-    return this.exportWithAsync(
-      Svg,
-      jsonInputs,
-      blobInputs,
-      compilationOptions,
-      pages,
-    );
+    return this.exportWithAsync(Svg, jsonInputs, blobInputs, mode, pages);
   }
 
   private exportWith(
     format: ExportFormat,
     jsonInputs?: Map<string, string>,
     blobInputs?: Map<string, BlobInput>,
-    compilationOptions?: CompilationMode,
+    mode?: CompilationMode,
     pages?: PageRange,
   ): Uint8Array {
-    const document = this.compileToDocumentId(
-      jsonInputs,
-      blobInputs,
-      compilationOptions,
-    );
+    const document = this.compileToDocumentId(jsonInputs, blobInputs, mode);
     try {
       return exportDocument(
         document,
@@ -538,13 +502,13 @@ export class Template implements Disposable {
     format: ExportFormat,
     jsonInputs?: Map<string, string>,
     blobInputs?: Map<string, BlobInput>,
-    compilationOptions?: CompilationMode,
+    mode?: CompilationMode,
     pages?: PageRange,
   ): Promise<Uint8Array> {
     const document = await this.compileToDocumentIdAsync(
       jsonInputs,
       blobInputs,
-      compilationOptions,
+      mode,
     );
     try {
       return await exportDocumentAsync(
@@ -566,18 +530,14 @@ export class Template implements Disposable {
    * single one-shot export, prefer {@link export}.
    * @param jsonInputs - JSON inputs for the template (defaults to empty map)
    * @param blobInputs - Blob inputs for the template (defaults to empty map)
-   * @param compilationOptions - Compilation mode (defaults to Production)
+   * @param mode - Compilation mode (defaults to Production)
    */
   public compile(
     jsonInputs?: Map<string, string>,
     blobInputs?: Map<string, BlobInput>,
-    compilationOptions?: CompilationMode,
+    mode?: CompilationMode,
   ): CompiledDocument {
-    const documentId = this.compileToDocumentId(
-      jsonInputs,
-      blobInputs,
-      compilationOptions,
-    );
+    const documentId = this.compileToDocumentId(jsonInputs, blobInputs, mode);
     return new CompiledDocument(documentId);
   }
 
@@ -591,17 +551,17 @@ export class Template implements Disposable {
    * {@link exportAsync}.
    * @param jsonInputs - JSON inputs for the template (defaults to empty map)
    * @param blobInputs - Blob inputs for the template (defaults to empty map)
-   * @param compilationOptions - Compilation mode (defaults to Production)
+   * @param mode - Compilation mode (defaults to Production)
    */
   public async compileAsync(
     jsonInputs?: Map<string, string>,
     blobInputs?: Map<string, BlobInput>,
-    compilationOptions?: CompilationMode,
+    mode?: CompilationMode,
   ): Promise<CompiledDocument> {
     const documentId = await this.compileToDocumentIdAsync(
       jsonInputs,
       blobInputs,
-      compilationOptions,
+      mode,
     );
     return new CompiledDocument(documentId);
   }
@@ -609,15 +569,13 @@ export class Template implements Disposable {
   private compileToDocumentId(
     jsonInputs?: Map<string, string>,
     blobInputs?: Map<string, BlobInput>,
-    compilationOptions?: CompilationMode,
+    mode?: CompilationMode,
   ): string {
     const documentId = compileTemplate(
       this.template,
       Object.fromEntries(jsonInputs ?? new Map<string, string>()),
       Template.convertBlobInputs(blobInputs ?? new Map<string, BlobInput>()),
-      Template.mapCompilationMode(
-        compilationOptions ?? CompilationMode.Production,
-      ),
+      Template.mapCompilationMode(mode ?? CompilationMode.Production),
     );
     this.lastWarnings = getWarnings(documentId) ?? undefined;
     return documentId;
@@ -626,15 +584,13 @@ export class Template implements Disposable {
   private async compileToDocumentIdAsync(
     jsonInputs?: Map<string, string>,
     blobInputs?: Map<string, BlobInput>,
-    compilationOptions?: CompilationMode,
+    mode?: CompilationMode,
   ): Promise<string> {
     const documentId = await compileTemplateAsync(
       this.template,
       Object.fromEntries(jsonInputs ?? new Map<string, string>()),
       Template.convertBlobInputs(blobInputs ?? new Map<string, BlobInput>()),
-      Template.mapCompilationMode(
-        compilationOptions ?? CompilationMode.Production,
-      ),
+      Template.mapCompilationMode(mode ?? CompilationMode.Production),
     );
     this.lastWarnings = getWarnings(documentId) ?? undefined;
     return documentId;

@@ -13,7 +13,7 @@ use std::collections::HashMap;
 use ext_php_rs::binary::Binary;
 use ext_php_rs::binary_slice::BinarySlice;
 use ext_php_rs::prelude::*;
-use ext_php_rs::zend::{ce, ClassEntry};
+use ext_php_rs::zend::{ClassEntry, ce};
 use oicana_ffi_core::panic_message;
 
 /// An exception of the wrapper's `Oicana\OicanaException`, or `\RuntimeException` when the
