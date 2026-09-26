@@ -40,8 +40,7 @@ class Template
      * @param array<string, BlobInput> $blobInputs blob inputs
      * @param CompilationMode $mode Compilation mode
      * @param ZipLimits|null $limits Limits for reading the template zip (defaults apply when null)
-     * @throws \RuntimeException If the oicana extension is not loaded
-     * @throws \Exception If template registration fails
+     * @throws OicanaException If the oicana extension is not loaded or template registration fails
      */
     public function __construct(
         string $template,
@@ -51,7 +50,7 @@ class Template
         ?ZipLimits $limits = null
     ) {
         if (!extension_loaded('oicana')) {
-            throw new \RuntimeException(
+            throw new OicanaException(
                 'The oicana PHP extension is not loaded. '
                 . 'Run "vendor/bin/oicana-env" to get the activation command for your platform, '
                 . 'or add the extension to your php.ini. '
@@ -95,7 +94,7 @@ class Template
      * @param CompilationMode $mode Compilation mode
      * @param PageRange|null $pages 0-based, inclusive page range (defaults to the whole document)
      * @return string Compiled document bytes (PDF, PNG, or SVG)
-     * @throws \Exception If compilation or export fails
+     * @throws OicanaException If compilation or export fails
      */
     public function export(
         array $jsonInputs = [],
@@ -138,7 +137,7 @@ class Template
      * @param CompilationMode $mode Compilation mode
      * @param PageRange|null $pages 0-based, inclusive page range (defaults to the whole document)
      * @return string PDF bytes
-     * @throws \Exception If compilation or export fails
+     * @throws OicanaException If compilation or export fails
      */
     public function exportPdf(
         array $jsonInputs = [],
@@ -159,7 +158,7 @@ class Template
      * @param float $pixelsPerPt Resolution in pixels per point (defaults to 1.0)
      * @param PageRange|null $pages 0-based, inclusive page range (defaults to the whole document)
      * @return string PNG bytes
-     * @throws \Exception If compilation or export fails
+     * @throws OicanaException If compilation or export fails
      */
     public function exportPng(
         array $jsonInputs = [],
@@ -179,7 +178,7 @@ class Template
      * @param CompilationMode $mode Compilation mode
      * @param PageRange|null $pages 0-based, inclusive page range (defaults to the whole document)
      * @return string SVG bytes
-     * @throws \Exception If compilation or export fails
+     * @throws OicanaException If compilation or export fails
      */
     public function exportSvg(
         array $jsonInputs = [],
@@ -201,7 +200,7 @@ class Template
      * @param array<string, BlobInput> $blobInputs Blob inputs
      * @param CompilationMode $mode Compilation mode
      * @return CompiledDocument A handle to the compiled document
-     * @throws \Exception If compilation fails
+     * @throws OicanaException If compilation fails
      */
     public function compile(
         array $jsonInputs = [],
@@ -238,7 +237,7 @@ class Template
      * @param PageRange|null $pages 0-based, inclusive page range (defaults to the whole document)
      * @param ZipLimits|null $limits Limits for reading the template zip (defaults apply when null)
      * @return ExportOnceResult The exported document and any compilation warnings
-     * @throws \Exception If compilation or export fails
+     * @throws OicanaException If compilation or export fails
      */
     public static function exportOnce(
         string $templateBytes,
@@ -275,7 +274,7 @@ class Template
      * template, including its input definitions.
      *
      * @return TemplateManifest The template manifest
-     * @throws \Exception If template is not registered
+     * @throws OicanaException If template is not registered
      */
     public function manifest(): TemplateManifest
     {
@@ -288,7 +287,7 @@ class Template
      *
      * @param string $path File path within the template
      * @return string Source code as string
-     * @throws \Exception If file not found or template not registered
+     * @throws OicanaException If file not found or template not registered
      */
     public function source(string $path): string
     {
@@ -300,7 +299,7 @@ class Template
      *
      * @param string $path File path within the template
      * @return string Binary file content
-     * @throws \Exception If file not found or template not registered
+     * @throws OicanaException If file not found or template not registered
      */
     public function file(string $path): string
     {

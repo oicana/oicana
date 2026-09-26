@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from oicana import CompilationMode, Template
+from oicana import CompilationMode, OicanaError, Template
 
 MINIMAL_MANIFEST = """\
 [package]
@@ -76,5 +76,10 @@ def future_manifest_template() -> bytes:
 
 def test_refuses_a_template_packed_by_a_newer_oicana() -> None:
     """Registering a template with an unsupported manifest version fails."""
-    with pytest.raises(Exception, match="manifest_version 99"):
+    with pytest.raises(OicanaError, match="manifest_version 99"):
         Template(future_manifest_template())
+
+
+def test_oicana_errors_are_runtime_errors() -> None:
+    """Callers catching RuntimeError keep catching Oicana failures."""
+    assert issubclass(OicanaError, RuntimeError)

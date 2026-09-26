@@ -18,7 +18,10 @@ pub enum PngExportError {
     #[error("the requested page range selected no pages of the document")]
     NoPagesSelected,
     /// Rendering the selected pages at the requested scale would exceed [`PngLimits`].
-    #[error("rendering would allocate {required} pixels, exceeding the limit of {limit}")]
+    #[error(
+        "rendering would allocate {required} pixels, exceeding the limit of {limit}; \
+         lower the pixels per point or export fewer pages"
+    )]
     TooLarge {
         /// The number of pixels rendering would allocate.
         required: u64,

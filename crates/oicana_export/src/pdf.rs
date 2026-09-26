@@ -1,4 +1,6 @@
+use oicana_template::PdfStandard;
 use oicana_world::diagnostics::TemplateDiagnostics;
+use thiserror::Error;
 use typst::{foundations::Smart, layout::PageRanges};
 use typst_layout::PagedDocument;
 use typst_pdf::{PdfOptions, PdfStandards};
@@ -49,6 +51,40 @@ pub fn validate_pdf_standards(standards: &[oicana_template::PdfStandard]) -> Res
         .map_err(|e| format!("Invalid combination of PDF standards: {}", e.message()))
 }
 
+/// Check that no standard requires a tagged PDF when the template disables tagging.
+pub fn validate_pdf_tagging(
+    standards: &[oicana_template::PdfStandard],
+    tagged: bool,
+) -> Result<(), String> {
+    match standards.iter().find(|s| !tagged && requires_tagging(**s)) {
+        Some(standard) => Err(PdfExportError::TaggingDisabled(*standard).to_string()),
+        None => Ok(()),
+    }
+}
+
+/// An error that occurred while exporting a document to PDF.
+#[derive(Debug, Error)]
+pub enum PdfExportError {
+    /// The requested page range selected none of the document's pages.
+    #[error("The requested page range selected no pages of the document")]
+    NoPagesSelected,
+    /// A standard requires a tagged PDF, but partial exports cannot be tagged.
+    #[error(
+        "PDF standard {0} requires a tagged PDF, but a page range cannot be tagged. \
+         Export the whole document or choose different standards"
+    )]
+    PageRangeCannotBeTagged(PdfStandard),
+    /// A standard requires a tagged PDF, but the template disables tagging.
+    #[error("PDF standard {0} requires a tagged PDF, but the template disables tagging")]
+    TaggingDisabled(PdfStandard),
+    /// The configured PDF standards cannot be combined.
+    #[error("Invalid combination of PDF standards: {0}")]
+    InvalidStandards(String),
+    /// Typst failed to produce the PDF.
+    #[error("{0}")]
+    ExportFailed(String),
+}
+
 /// Export the document to PDF.
 ///
 /// When `pages` is `None` the whole document is exported; otherwise only the
@@ -63,7 +99,7 @@ pub fn export_pdf<Diagnostics: TemplateDiagnostics>(
     standards: &[oicana_template::PdfStandard],
     tagged: bool,
     pages: Option<&PageRange>,
-) -> Result<Vec<u8>, String> {
+) -> Result<Vec<u8>, PdfExportError> {
     let typst_standards: Vec<_> = standards.iter().map(|s| to_typst_standard(*s)).collect();
 
     let page_count = document.pages().len();
@@ -72,7 +108,7 @@ pub fn export_pdf<Diagnostics: TemplateDiagnostics>(
         None => page_count,
     };
     if selected_count == 0 {
-        return Err("the requested page range selected no pages of the document".to_owned());
+        return Err(PdfExportError::NoPagesSelected);
     }
 
     // Typst refuses to produce a tagged PDF when a page range is set. Only
@@ -83,13 +119,9 @@ pub fn export_pdf<Diagnostics: TemplateDiagnostics>(
     if !tagged {
         if let Some(standard) = standards.iter().find(|s| requires_tagging(**s)) {
             return Err(if skips_pages {
-                format!(
-                    "PDF standard {standard} requires a tagged PDF, but a page range cannot be tagged. Export the whole document or choose different standards"
-                )
+                PdfExportError::PageRangeCannotBeTagged(*standard)
             } else {
-                format!(
-                    "PDF standard {standard} requires a tagged PDF, but the template disables tagging"
-                )
+                PdfExportError::TaggingDisabled(*standard)
             });
         }
     }
@@ -105,12 +137,14 @@ pub fn export_pdf<Diagnostics: TemplateDiagnostics>(
         },
         tagged,
         standards: PdfStandards::new(&typst_standards)
-            .map_err(|e| format!("Invalid combination of PDF standards: {}", e.message()))?,
+            .map_err(|e| PdfExportError::InvalidStandards(e.message().to_string()))?,
         pretty: false,
     };
 
     typst_pdf::pdf(document, &options).map_err(|source_error| {
-        String::from_utf8_lossy(&diagnostics.format_diagnostics(source_error)).into()
+        PdfExportError::ExportFailed(
+            String::from_utf8_lossy(&diagnostics.format_diagnostics(source_error)).into(),
+        )
     })
 }
 
@@ -355,6 +389,7 @@ mod tests {
         assert!(result.is_err());
         assert!(result
             .unwrap_err()
+            .to_string()
             .contains("Invalid combination of PDF standards"));
     }
 
@@ -393,6 +428,19 @@ mod tests {
     }
 
     #[test]
+    fn validate_pdf_tagging_rejects_standards_requiring_tags_when_untagged() {
+        for standard in ALL_STANDARDS {
+            assert!(validate_pdf_tagging(&[standard], true).is_ok());
+            let result = validate_pdf_tagging(&[standard], false);
+            if requires_tagging(standard) {
+                assert!(result.unwrap_err().contains("disables tagging"));
+            } else {
+                assert!(result.is_ok());
+            }
+        }
+    }
+
+    #[test]
     fn page_range_with_a_standard_requiring_tags_is_rejected() {
         let (document, world) = compile(accessible_template());
 
@@ -404,7 +452,8 @@ mod tests {
                 true,
                 Some(&PageRange::single(0)),
             )
-            .unwrap_err();
+            .unwrap_err()
+            .to_string();
             assert!(err.contains("requires a tagged PDF"), "{standard}: {err}");
             assert!(err.contains("page range"), "{standard}: {err}");
         }
@@ -415,7 +464,9 @@ mod tests {
         let (document, world) = compile(accessible_template());
 
         for standard in ALL_STANDARDS.into_iter().filter(|s| requires_tagging(*s)) {
-            let err = export_pdf(&document, &world, &[standard], false, None).unwrap_err();
+            let err = export_pdf(&document, &world, &[standard], false, None)
+                .unwrap_err()
+                .to_string();
             assert!(
                 err.contains("template disables tagging"),
                 "{standard}: {err}"

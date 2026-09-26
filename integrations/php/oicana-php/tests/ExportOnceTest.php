@@ -66,8 +66,8 @@ test('registration enforces zip limits', function () {
 });
 
 test('diagnostic color configuration succeeds', function () {
-    Configuration::setDiagnosticColor(DiagnosticColor::Ansi);
-    Configuration::setDiagnosticColor(DiagnosticColor::None);
+    Configuration::configureDiagnosticColor(DiagnosticColor::Ansi);
+    Configuration::configureDiagnosticColor(DiagnosticColor::None);
 
     expect(true)->toBeTrue();
 });

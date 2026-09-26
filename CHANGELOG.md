@@ -14,6 +14,9 @@
 - `pack` excludes `.git`, `.DS_Store` and `*.zip` by default
 - `pack` fails when a file cannot be read
 - `pack` now finds `import` and `include` of packages at any nesting depth
+- `pack` leaves out the files a packaged dependency excludes in its own `typst.toml`
+- `compile` and `watch` fail for blob metadata (`-m`) without a matching blob (`-b`) and for badly formatted key-value pairs
+- `validate` rejects `tagged = false` combined with a standard that requires tags (`ua-1`, `a-1a`, `a-2a`, `a-3a`)
 
 ### Java
 - A JVM that has not granted native access now fails with an `OicanaException` naming the required `--enable-native-access` flag
@@ -22,21 +25,30 @@
 - The Linux libraries are now built against glibc 2.28
 - `configureAutomaticCacheEviction` and `evictCache` moved from `Template` to `Configuration`
   - Call `Configuration.disableAutomaticCacheEviction()` to turn automatic eviction off
+- `Configuration.setDiagnosticColor` is now `Configuration.configureDiagnosticColor`
+- `ExportOnceResult.warnings()` returns an `Optional<String>` instead of a nullable `String`
 
 ### Node.js
-- `engines` declares the actual minimum of `^20.19.0 || >=22.12.0`; the package is ESM-only, so CommonJS callers such as NestJS need a Node version with `require(esm)`
+- `engines` declares the actual minimum of `^20.19.0 || >=22.12.0`; the package is ESM-only, so CommonJS callers need a Node version with `require(esm)`
 - Publish a `linux-x64-musl` build
 - `BlobWithMetadata` is now `BlobInput`, its fields `bytes` and `meta` are now `data` and `metadata`
 
 ### Browser
 - `BlobWithMetadata` is now `BlobInput`, its fields `bytes` and `meta` are now `data` and `metadata`
+- Concurrent `initialize` calls share one download of the WASM module
+- The `Template` constructor that takes `ZipLimits` is now part of the type declarations
+- All export methods, `ExportOnceResult.document` and `Template.file` return `Uint8Array<ArrayBuffer>`
+- Perf: Blob input data is copied into WASM in one go
 
 ### C#
 - `BlobInput.Meta` is now `BlobInput.Metadata`
+- Fixed handling of JSON inputs holding plain strings
+- `PageRange.Single` and `PageRange.Of` now reject negative page indices
 - Support `linux-arm64`
 - The Linux libraries are now built against glibc 2.28
 - `ITemplate` and `IOicanaService` extend `IDisposable` so callers can release their resources
 - `OicanaService.RegisterTemplate` now replaces an already registered id and disposes the old template
+- Added `OicanaService.RegisterTemplate(id, template)` to register an already created template
 - `CompilationOptions` is gone; the export and compile methods take a `CompilationMode` directly, defaulting to `Production`
 - `jsonInputs`, `blobInputs` and `exportFormat` are optional on every export and compile method, and on the `Template` constructor
 - `Configuration.DiagnosticsColoring(DiagnosticsColoring)` is now `Configuration.ConfigureDiagnosticColor(DiagnosticColor)`, and `DiagnosticColor` moved from `Oicana.Interop` to `Oicana.Config`
@@ -46,11 +58,16 @@
 ### PHP
 - The installer detects musl and fails with an explanation
 - The installer fails `composer install` when downloading or verifying the extension fails
+- The installer downloads through Composer, honoring Composer's proxy and certificate settings
 - `Template::cleanup()` is now `Template::close()`, matching `CompiledDocument::close()`
 - `configureAutomaticCacheEviction` and `evictCache` moved from `Template` to `Configuration`
+- `Configuration::setDiagnosticColor` is now `Configuration::configureDiagnosticColor`
+- Failures throw `Oicana\OicanaException`, a `\RuntimeException`, instead of a plain `\Exception`
 
 ### Python
 - `Template.cleanup()` is now `Template.close()`, matching `CompiledDocument.close()`
+- Failures raise `oicana.OicanaError`, a subclass of `RuntimeError`
+- Added `CompiledDocument.page_count`
 
 ### Typst package
 - Better error message for input definition without a `type`
@@ -60,6 +77,9 @@
 - Native Template constructors are now `Template::open` and `Template::open_with_fonts`
 - `OicanaWorld::new` and `new_with_fonts` no longer take inputs; supply them through `update_inputs`
 - The input types moved to the root of `oicana::input`
+- `TemplateInputs::new()` now uses production mode by default
+- `export_pdf` returns `PdfExportError`
+- `oicana::typst` re-exports `VirtualPath`, `RootedPath`, `VirtualRoot` and `PathError` to build the `FileId` that `Template::source` and `Template::file` take
 
 ## v0.8.0
 

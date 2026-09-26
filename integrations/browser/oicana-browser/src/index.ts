@@ -48,14 +48,18 @@ export function registeredFonts(): RegisteredFont[] {
   return registered_fonts() as RegisteredFont[];
 }
 
-const initialized: Set<string> = new Set();
+const initializing: Map<string, Promise<void>> = new Map();
 
 /**
  * Initializes the WASM module from the given URL
  * @param wasmPath URL from which to load the WASM module
  */
-export async function initialize(wasmPath: string): Promise<void> {
-  if (initialized.has(wasmPath)) return;
-  await init({ module_or_path: wasmPath });
-  initialized.add(wasmPath);
+export function initialize(wasmPath: string): Promise<void> {
+  let pending = initializing.get(wasmPath);
+  if (pending === undefined) {
+    pending = init({ module_or_path: wasmPath }).then(() => undefined);
+    pending.catch(() => initializing.delete(wasmPath));
+    initializing.set(wasmPath, pending);
+  }
+  return pending;
 }

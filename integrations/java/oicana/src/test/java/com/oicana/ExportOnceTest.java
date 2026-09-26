@@ -66,7 +66,7 @@ class ExportOnceTest {
         );
 
         assertEquals("%PDF", new String(result.document(), 0, 4, StandardCharsets.US_ASCII));
-        assertNull(result.warnings());
+        assertTrue(result.warnings().isEmpty());
     }
 
     @Test
@@ -84,8 +84,8 @@ class ExportOnceTest {
         );
 
         assertTrue(new String(result.document(), StandardCharsets.UTF_8).contains("<svg"));
-        assertNotNull(result.warnings());
-        assertTrue(result.warnings().contains("NonexistentFontExportOnce"));
+        assertTrue(result.warnings().isPresent());
+        assertTrue(result.warnings().get().contains("NonexistentFontExportOnce"));
     }
 
     @Test
@@ -131,7 +131,7 @@ class ExportOnceTest {
 
     @Test
     void diagnosticColorConfigurationSucceeds() {
-        Configuration.setDiagnosticColor(DiagnosticColor.ANSI);
-        Configuration.setDiagnosticColor(DiagnosticColor.NONE);
+        Configuration.configureDiagnosticColor(DiagnosticColor.ANSI);
+        Configuration.configureDiagnosticColor(DiagnosticColor.NONE);
     }
 }

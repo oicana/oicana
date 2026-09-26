@@ -1,10 +1,10 @@
 use crate::compile::export::{export_image, export_pdf, ExportFormat, ImageExportFormat};
 use crate::fonts::FontArgs;
-use anyhow::{Context, Ok};
+use anyhow::{anyhow, bail, Context, Ok};
 use chrono::Utc;
 use clap::Args;
 use console::{style, Emoji};
-use log::{info, warn};
+use log::info;
 use oicana::files::native::NativeTemplate;
 use oicana::input::{BlobInput, JsonInput};
 use oicana::input::{CompilationConfig, TemplateInputs};
@@ -141,42 +141,32 @@ pub(crate) fn build_file_name(args: &CompileArgs, template: &Template<NativeTemp
         .replace("{format}", args.format.file_ending())
 }
 
-fn split_pair(pair: &str) -> Option<(&str, &str)> {
-    let split = pair.split_once('=');
-    if split.is_none() {
-        warn!("Ignoring invalid key-value pair: {pair}");
-    }
-    split
+fn split_pair(pair: &str) -> anyhow::Result<(&str, &str)> {
+    pair.split_once('=')
+        .ok_or_else(|| anyhow!("Invalid key-value pair '{pair}', expected <key>=<path>."))
 }
 
 pub(crate) fn build_inputs(args: &CompileArgs) -> anyhow::Result<TemplateInputs> {
     let mut inputs = TemplateInputs::new();
-    if !args.development {
-        inputs.with_config(CompilationConfig::production());
+    if args.development {
+        inputs.with_config(CompilationConfig::development());
     }
     for pair in &args.json {
-        let Some((key, path)) = split_pair(pair) else {
-            continue;
-        };
+        let (key, path) = split_pair(pair)?;
         let input = read_to_string(path).context("Failed to read json input file.")?;
         inputs.with_input(JsonInput::new(key, input));
     }
 
     let mut blobs = HashMap::new();
     for pair in &args.blob {
-        let Some((key, path)) = split_pair(pair) else {
-            continue;
-        };
+        let (key, path) = split_pair(pair)?;
         let blob = read(path).context("Failed to read blob input file.")?;
         blobs.insert(key.to_owned(), BlobInput::new(key, blob));
     }
     for pair in &args.blob_meta {
-        let Some((key, path)) = split_pair(pair) else {
-            continue;
-        };
+        let (key, path) = split_pair(pair)?;
         let Some(blob) = blobs.get_mut(key) else {
-            warn!("Ignoring blob meta key-value pair: {pair}, because no corresponding blob was passed.");
-            continue;
+            bail!("Blob metadata '{pair}' has no blob input with the key '{key}'.");
         };
         let meta = read_to_string(path).context("Failed to read json file as blob metadata.")?;
         blob.value.metadata = serde_json::from_str(&meta)

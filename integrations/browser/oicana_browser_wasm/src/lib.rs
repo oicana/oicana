@@ -3,10 +3,12 @@
 //! You most likely want to use the npm package `@oicana/browser` instead.
 
 use std::collections::HashMap;
+use std::fmt;
 use std::sync::atomic::{AtomicU8, Ordering};
 
 use js_sys::Uint8Array;
 use log::{trace, warn, Level, LevelFilter};
+use serde::de::{Deserializer, SeqAccess, Visitor};
 use serde::Deserialize;
 use serde_wasm_bindgen::{from_value, to_value};
 use wasm_bindgen::prelude::wasm_bindgen;
@@ -235,7 +237,7 @@ pub fn get_source(template: String, file: String) -> Result<String, String> {
     oicana_ffi_core::get_source(&template, &file).map_err(|error| error.to_string())
 }
 
-/// Load the source of the given file in the template.
+/// Load the raw bytes of the given file in the template.
 ///
 /// Calling this method requires a previous call to [`register_template`] with the same template
 /// identifier.
@@ -425,7 +427,38 @@ impl From<CompilationMode> for oicana_ffi_core::CompilationMode {
 
 #[derive(Deserialize)]
 struct BlobInput {
+    #[serde(deserialize_with = "deserialize_bytes")]
     data: Vec<u8>,
     #[serde(default)]
     metadata: Option<serde_json::Value>,
+}
+
+fn deserialize_bytes<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Vec<u8>, D::Error> {
+    struct BytesVisitor;
+
+    impl<'de> Visitor<'de> for BytesVisitor {
+        type Value = Vec<u8>;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("a Uint8Array")
+        }
+
+        fn visit_byte_buf<E>(self, bytes: Vec<u8>) -> Result<Vec<u8>, E> {
+            Ok(bytes)
+        }
+
+        fn visit_bytes<E>(self, bytes: &[u8]) -> Result<Vec<u8>, E> {
+            Ok(bytes.to_vec())
+        }
+
+        fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Vec<u8>, A::Error> {
+            let mut bytes = Vec::with_capacity(seq.size_hint().unwrap_or(0));
+            while let Some(byte) = seq.next_element()? {
+                bytes.push(byte);
+            }
+            Ok(bytes)
+        }
+    }
+
+    deserializer.deserialize_byte_buf(BytesVisitor)
 }

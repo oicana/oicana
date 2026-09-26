@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Oicana\Installer;
 
+use Composer\Downloader\TransportException;
+use Composer\Util\HttpDownloader;
+
 /**
  * Downloads Oicana native extension binaries from GitHub Releases.
  */
@@ -13,7 +16,8 @@ final class BinaryDownloader
     private const CHECKSUMS_FILE = __DIR__ . '/../checksums.json';
 
     public function __construct(
-        private readonly string $version
+        private readonly string $version,
+        private readonly HttpDownloader $httpDownloader
     ) {
     }
 
@@ -47,18 +51,20 @@ final class BinaryDownloader
 
         $expectedHash = $this->expectedHash($binaryName);
 
-        // Download with proper error handling
-        $content = $this->fetchUrl($url);
-        if ($content === false) {
+        try {
+            $content = (string) $this->httpDownloader->get($url)->getBody();
+        } catch (TransportException $e) {
             throw new \RuntimeException(sprintf(
                 "Failed to download extension from: %s\n" .
+                "%s\n" .
                 "Please check:\n" .
                 "  1. The release exists on GitHub\n" .
-                "  2. Your internet connection\n" .
+                "  2. Your internet connection and proxy settings\n" .
                 "  3. The binary is available for your platform: %s",
                 $url,
+                $e->getMessage(),
                 $platform->getDescription()
-            ));
+            ), 0, $e);
         }
 
         $actualHash = 'sha256:' . hash('sha256', $content);
@@ -133,25 +139,5 @@ final class BinaryDownloader
         }
 
         return $targetDir;
-    }
-
-    /**
-     * Fetch URL content with proper headers.
-     *
-     * @return string|false Content on success, false on failure
-     */
-    private function fetchUrl(string $url): string|false
-    {
-        $context = stream_context_create([
-            'http' => [
-                'method' => 'GET',
-                'header' => sprintf("User-Agent: oicana-installer %s", $this->version),
-                'follow_location' => 1,
-                'max_redirects' => 5,
-                'timeout' => 60,
-            ],
-        ]);
-
-        return @file_get_contents($url, false, $context);
     }
 }

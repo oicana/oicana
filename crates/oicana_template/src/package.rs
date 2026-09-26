@@ -1,6 +1,7 @@
 use chrono::{Datelike, Timelike, Utc};
-use ignore::gitignore::Gitignore;
+use ignore::gitignore::{Gitignore, GitignoreBuilder};
 use log::trace;
+use serde::Deserialize;
 use std::fs::File;
 use std::io;
 use std::io::{Read, Seek, Write};
@@ -76,27 +77,57 @@ where
                 return false;
             }
         }
-        !exclude_matcher
-            .matched_path_or_any_parents(relative, entry.file_type().is_dir())
-            .is_ignore()
+        !is_excluded(exclude_matcher, relative, entry)
     });
 
     add_dir_to_zip(&mut zip, &mut it, src_dir, Path::new(""), options)?;
 
     // Add dependency directories
     for (source_dir, zip_prefix) in dependencies {
+        let dep_matcher = dependency_exclude_matcher(source_dir);
         let dep_walk = WalkDir::new(source_dir).follow_links(true);
-        add_dir_to_zip(
-            &mut zip,
-            &mut dep_walk.into_iter(),
-            source_dir,
-            zip_prefix,
-            options,
-        )?;
+        let mut dep_it = dep_walk.into_iter().filter_entry(|entry| {
+            let relative = entry.path().strip_prefix(source_dir).unwrap();
+            !is_excluded(&dep_matcher, relative, entry)
+        });
+        add_dir_to_zip(&mut zip, &mut dep_it, source_dir, zip_prefix, options)?;
     }
 
     zip.finish()?;
     Ok(())
+}
+
+fn is_excluded(matcher: &Gitignore, relative: &Path, entry: &DirEntry) -> bool {
+    matcher
+        .matched_path_or_any_parents(relative, entry.file_type().is_dir())
+        .is_ignore()
+}
+
+#[derive(Deserialize, Default)]
+struct DependencyManifest {
+    #[serde(default)]
+    package: DependencyPackage,
+}
+
+#[derive(Deserialize, Default)]
+struct DependencyPackage {
+    #[serde(default)]
+    exclude: Vec<String>,
+}
+
+/// Build a matcher from the `exclude` field of a dependency's `typst.toml`.
+fn dependency_exclude_matcher(package_dir: &Path) -> Gitignore {
+    let manifest = std::fs::read_to_string(package_dir.join("typst.toml"))
+        .ok()
+        .and_then(|content| toml::from_str::<DependencyManifest>(&content).ok())
+        .unwrap_or_default();
+    let mut builder = GitignoreBuilder::new("");
+    for pattern in &manifest.package.exclude {
+        if let Err(error) = builder.add_line(None, pattern) {
+            log::warn!("Ignoring invalid exclude pattern '{pattern}' of a dependency: {error}");
+        }
+    }
+    builder.build().unwrap_or_else(|_| Gitignore::empty())
 }
 
 fn add_dir_to_zip<T: Write + Seek>(
@@ -281,6 +312,48 @@ manifest_version = 1
         let mut content = String::new();
         file.read_to_string(&mut content).unwrap();
         assert_eq!(content, "{}");
+    }
+
+    #[test]
+    fn applies_the_exclude_list_of_dependencies() {
+        let template = TempDir::new().unwrap();
+        std::fs::write(template.path().join("typst.toml"), manifest()).unwrap();
+        std::fs::write(template.path().join("main.typ"), "Hello").unwrap();
+
+        let dependency = TempDir::new().unwrap();
+        std::fs::write(
+            dependency.path().join("typst.toml"),
+            "[package]\nname = \"dep\"\nversion = \"0.1.0\"\nentrypoint = \"lib.typ\"\nexclude = [\"tests/**\", \".github\"]\n",
+        )
+        .unwrap();
+        std::fs::write(dependency.path().join("lib.typ"), "").unwrap();
+        for dir in ["tests", ".github"] {
+            std::fs::create_dir(dependency.path().join(dir)).unwrap();
+            std::fs::write(dependency.path().join(dir).join("file"), "").unwrap();
+        }
+
+        let manifest = TemplateManifest::from_toml(manifest()).unwrap();
+        let mut buffer = Cursor::new(Vec::new());
+        package_with_dependencies(
+            template.path(),
+            &mut buffer,
+            &manifest.build_exclude_matcher(),
+            None,
+            &[(
+                dependency.path().to_path_buf(),
+                PathBuf::from(".dependencies/preview/dep/0.1.0"),
+            )],
+        )
+        .unwrap();
+
+        buffer.set_position(0);
+        let archive = zip::ZipArchive::new(buffer).unwrap();
+        let names: Vec<&str> = archive.file_names().collect();
+        assert!(names.contains(&".dependencies/preview/dep/0.1.0/lib.typ"));
+        assert!(names.contains(&".dependencies/preview/dep/0.1.0/typst.toml"));
+        assert!(!names
+            .iter()
+            .any(|name| name.contains("tests") || name.contains(".github")));
     }
 
     #[test]

@@ -80,7 +80,7 @@ final class InstallerPlugin implements PluginInterface, EventSubscriberInterface
             ));
 
             $version = $this->resolveOwnVersion();
-            $downloader = new BinaryDownloader($version);
+            $downloader = new BinaryDownloader($version, $this->composer->getLoop()->getHttpDownloader());
             $extensionPath = $downloader->download($platform);
 
             $io->write('<info>✓ Extension downloaded to: ' . $extensionPath . '</info>');
@@ -94,8 +94,8 @@ final class InstallerPlugin implements PluginInterface, EventSubscriberInterface
         } catch (UnsupportedPlatformException $e) {
             $io->writeError('<warning>Oicana extension not installed: ' . $e->getMessage() . '</warning>');
             $io->writeError('');
-            $io->writeError('<comment>You can download the extension manually from:</comment>');
-            $io->writeError('<comment>https://github.com/oicana/oicana/releases</comment>');
+            $io->writeError('<comment>To install the extension manually, see:</comment>');
+            $io->writeError('<comment>https://github.com/oicana/oicana/tree/main/integrations/php/oicana-php-installer#if-automatic-installation-fails</comment>');
             $io->writeError('');
         }
     }

@@ -79,7 +79,7 @@ final class CompiledDocument
      * @param ExportFormat|null $exportFormat Export format configuration (defaults to PDF)
      * @param PageRange|null $pages 0-based, inclusive page range (defaults to the whole document)
      * @return string Document bytes (PDF, PNG, or SVG)
-     * @throws \Exception If export fails
+     * @throws OicanaException If export fails
      */
     public function export(?ExportFormat $exportFormat = null, ?PageRange $pages = null): string
     {
@@ -99,7 +99,7 @@ final class CompiledDocument
      *
      * @param PageRange|null $pages 0-based, inclusive page range (defaults to the whole document)
      * @return string PDF bytes
-     * @throws \Exception If export fails
+     * @throws OicanaException If export fails
      */
     public function exportPdf(?PageRange $pages = null): string
     {
@@ -113,7 +113,7 @@ final class CompiledDocument
      * @param float $pixelsPerPt Resolution in pixels per point (defaults to 1.0)
      * @param PageRange|null $pages 0-based, inclusive page range (defaults to the whole document)
      * @return string PNG bytes
-     * @throws \Exception If export fails
+     * @throws OicanaException If export fails
      */
     public function exportPng(float $pixelsPerPt = 1.0, ?PageRange $pages = null): string
     {
@@ -125,7 +125,7 @@ final class CompiledDocument
      *
      * @param PageRange|null $pages 0-based, inclusive page range (defaults to the whole document)
      * @return string SVG bytes
-     * @throws \Exception If export fails
+     * @throws OicanaException If export fails
      */
     public function exportSvg(?PageRange $pages = null): string
     {
@@ -158,7 +158,7 @@ final class CompiledDocument
     private function ensureOpen(): void
     {
         if ($this->documentId === null) {
-            throw new \RuntimeException('CompiledDocument has already been closed');
+            throw new OicanaException('CompiledDocument has already been closed');
         }
     }
 }

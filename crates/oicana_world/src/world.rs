@@ -288,11 +288,11 @@ impl<Files: TemplateFiles> OicanaWorld<Files> {
 #[derive(Error, Debug)]
 pub enum WorldCreationError {
     /// Error while accessing a file in the template
-    #[error("Failed to access a required file")]
-    FileError(#[from] FileError),
+    #[error("Failed to access a required file: {0}")]
+    FileError(FileError),
     /// Error in the template manifest
-    #[error("There was an issue with the package manifest")]
-    ManifestError(#[from] ManifestValidationError),
+    #[error("There was an issue with the package manifest: {0}")]
+    ManifestError(ManifestValidationError),
     /// A JSON schema could not be loaded or compiled
     #[error("Schema error for input '{key}': {message}")]
     SchemaError {
@@ -311,6 +311,18 @@ pub enum WorldCreationError {
         .0.join(", ")
     )]
     MissingFonts(Vec<String>),
+}
+
+impl From<FileError> for WorldCreationError {
+    fn from(error: FileError) -> Self {
+        WorldCreationError::FileError(error)
+    }
+}
+
+impl From<ManifestValidationError> for WorldCreationError {
+    fn from(error: ManifestValidationError) -> Self {
+        WorldCreationError::ManifestError(error)
+    }
 }
 
 /// A supplied input whose kind does not match the kind its definition declares
@@ -638,9 +650,12 @@ mod tests {
         let files = PreloadedTemplate::new(files);
         let manifest = files.manifest().expect("should be able to parse manifest");
 
-        let Err(WorldCreationError::FileError(file_error)) = OicanaWorld::new(files, manifest)
-        else {
-            panic!("Created a world without main template file or with wrong error")
+        let Err(error) = OicanaWorld::new(files, manifest) else {
+            panic!("Created a world without main template file")
+        };
+        assert!(error.to_string().contains("not_main.typ"), "got: {error}");
+        let WorldCreationError::FileError(file_error) = error else {
+            panic!("Wrong error: {error}")
         };
 
         assert_eq!(

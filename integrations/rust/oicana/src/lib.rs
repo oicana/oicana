@@ -112,7 +112,7 @@ pub mod typst {
     pub use ::typst::diag::{FileResult, SourceDiagnostic};
     pub use ::typst::ecow::EcoVec;
     pub use ::typst::foundations::{Array, Bytes, Dict, IntoValue, Str, Value};
-    pub use ::typst::syntax::{FileId, Source};
+    pub use ::typst::syntax::{FileId, PathError, RootedPath, Source, VirtualPath, VirtualRoot};
 }
 
 /// Global cache age configuration.
@@ -213,6 +213,19 @@ impl<Files: TemplateFiles> Template<Files> {
     }
 
     /// Return the source of a file in the template project
+    ///
+    /// ```no_run
+    /// # use std::fs::File;
+    /// # use oicana::Template;
+    /// use oicana::typst::{FileId, RootedPath, VirtualPath, VirtualRoot};
+    ///
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let template = Template::init(File::open("invoice-0.1.0.zip")?)?;
+    /// let path = VirtualPath::new("main.typ")?;
+    /// let source = template.source(FileId::new(RootedPath::new(VirtualRoot::Project, path)))?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn source(&self, id: FileId) -> FileResult<Source> {
         self.world.files.source(id)
     }

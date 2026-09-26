@@ -13,7 +13,7 @@ python/
 ├── pyproject.toml              # uv workspace config
 ├── oicana-python-native/       # Native extension (Rust)
 │   ├── src/lib.rs              # PyO3 lib
-│   └── pyproject.toml          # maturin, abi3-py38
+│   └── pyproject.toml          # maturin, abi3-py39
 └── oicana-python/              # Wrapper
     └── src/oicana/
         ├── template.py         # Template class

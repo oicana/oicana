@@ -2,7 +2,7 @@ use crate::target::TargetArgs;
 use clap::Args;
 use console::{style, Emoji};
 use log::info;
-use oicana::export::pdf::validate_pdf_standards;
+use oicana::export::pdf::{validate_pdf_standards, validate_pdf_tagging};
 use oicana::input::InputDefinition;
 use oicana::template::validate_native_template;
 use std::path::Path;
@@ -59,9 +59,11 @@ pub fn validate(args: ValidateArgs) -> anyhow::Result<()> {
                     warnings,
                 } = validate_input_values(&template.path, &manifest.tool.oicana.inputs);
 
-                if let Err(error) =
-                    validate_pdf_standards(&manifest.tool.oicana.export.pdf.standards)
-                {
+                let pdf = &manifest.tool.oicana.export.pdf;
+                if let Err(error) = validate_pdf_standards(&pdf.standards) {
+                    errors.push(error);
+                }
+                if let Err(error) = validate_pdf_tagging(&pdf.standards, pdf.tagged) {
                     errors.push(error);
                 }
 

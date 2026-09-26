@@ -56,11 +56,18 @@ export class CompiledDocument implements Disposable {
    * @param format - export format specification
    * @param pages - 0-based, inclusive page range (defaults to the whole document)
    */
-  public export(format: ExportFormat = Pdf, pages?: PageRange): Uint8Array {
+  public export(
+    format: ExportFormat = Pdf,
+    pages?: PageRange,
+  ): Uint8Array<ArrayBuffer> {
     if (this.documentId === undefined) {
       throw new Error('CompiledDocument has already been disposed');
     }
-    return export_document(this.documentId, format, pages);
+    return export_document(
+      this.documentId,
+      format,
+      pages,
+    ) as Uint8Array<ArrayBuffer>;
   }
 
   /**
@@ -68,7 +75,7 @@ export class CompiledDocument implements Disposable {
    * Tagging will be automatically turned off when exporting a subset of pages.
    * @param pages - 0-based, inclusive page range (defaults to the whole document)
    */
-  public exportPdf(pages?: PageRange): Uint8Array {
+  public exportPdf(pages?: PageRange): Uint8Array<ArrayBuffer> {
     return this.export(Pdf, pages);
   }
 
@@ -78,7 +85,10 @@ export class CompiledDocument implements Disposable {
    * @param pixelsPerPt - resolution in pixels per point (defaults to 1.0)
    * @param pages - 0-based, inclusive page range (defaults to the whole document)
    */
-  public exportPng(pixelsPerPt = 1.0, pages?: PageRange): Uint8Array {
+  public exportPng(
+    pixelsPerPt = 1.0,
+    pages?: PageRange,
+  ): Uint8Array<ArrayBuffer> {
     return this.export(Png(pixelsPerPt), pages);
   }
 
@@ -86,7 +96,7 @@ export class CompiledDocument implements Disposable {
    * Export the document to SVG, optionally restricted to a range of pages.
    * @param pages - 0-based, inclusive page range (defaults to the whole document)
    */
-  public exportSvg(pages?: PageRange): Uint8Array {
+  public exportSvg(pages?: PageRange): Uint8Array<ArrayBuffer> {
     return this.export(Svg, pages);
   }
 

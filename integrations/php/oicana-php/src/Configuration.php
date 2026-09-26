@@ -16,7 +16,7 @@ final class Configuration
     /**
      * Configure the coloring of compilation diagnostics like warnings and errors.
      */
-    public static function setDiagnosticColor(DiagnosticColor $color): void
+    public static function configureDiagnosticColor(DiagnosticColor $color): void
     {
         \OicanaInternal\configure_diagnostic_color($color === DiagnosticColor::Ansi);
     }
@@ -71,7 +71,8 @@ final class Configuration
     /**
      * Make fonts on disk available to every template registered from now on.
      *
-     * @param list<string> $paths Paths to font files.
+     * @param list<string> $paths Paths to font files, or to directories whose font
+     *                            files are all added.
      *
      * @return int The number of font faces that were added.
      */

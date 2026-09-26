@@ -14,7 +14,7 @@ Oicana compiles PDFs in process through native bindings instead. You design docu
 npm install @oicana/node
 ```
 
-The matching native binary is installed automatically. Supported platforms: Linux x64 (glibc), Linux arm64 (glibc and musl), macOS x64 and arm64, and Windows x64 and arm64.
+The matching native binary is installed automatically. Supported platforms: Linux x64 and arm64 (glibc and musl), macOS x64 and arm64, and Windows x64 and arm64.
 
 ## Quick start
 

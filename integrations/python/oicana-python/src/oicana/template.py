@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 
 from oicana_native import (
     BlobWithMetadata,
+    OicanaError,
     compile_template,
     document_pages,
     export_document,
@@ -466,6 +467,11 @@ class CompiledDocument:
         #: Warnings produced by the compilation of this document, or ``None``.
         self.warnings: str | None = get_warnings(document_id)
 
+    @property
+    def page_count(self) -> int:
+        """Number of pages in the document."""
+        return len(self.pages)
+
     def export(
         self,
         export: ExportFormat = {"format": "pdf"},  # type: ignore[typeddict-item]
@@ -478,7 +484,7 @@ class CompiledDocument:
             pages: 0-based, inclusive page range (defaults to the whole document)
         """
         if self._document_id is None:
-            raise RuntimeError("CompiledDocument has already been closed")
+            raise OicanaError("CompiledDocument has already been closed")
         return bytes(
             export_document(
                 self._document_id, _serialize_export_format(export), _serialize_page_range(pages)
@@ -591,7 +597,8 @@ def register_font_paths(paths: str | os.PathLike[str] | Iterable[str | os.PathLi
     """Make fonts on disk available to every template registered from now on.
 
     Args:
-        paths: One or more paths to font files.
+        paths: One or more paths to font files, or to directories whose font
+            files are all added.
 
     Returns:
         The number of font faces that were added.

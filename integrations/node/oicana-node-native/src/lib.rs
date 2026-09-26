@@ -320,7 +320,7 @@ pub fn get_source(template: String, file: String) -> Result<String> {
   oicana_ffi_core::get_source(&template, &file).map_err(into_napi_err)
 }
 
-/// Load the source of the given file in the template.
+/// Load the raw bytes of the given file in the template.
 ///
 /// Calling this method requires a previous call to [`register_template`] with the same template
 /// identifier.
@@ -477,6 +477,7 @@ pub fn register_fonts(fonts: Vec<Uint8Array>) -> u32 {
 
 /// Make fonts on disk available to every template registered from now on.
 ///
+/// Each path is a font file, or a directory whose font files are all added.
 /// Returns the number of font faces that were added.
 #[napi(catch_unwind)]
 pub fn register_font_paths(paths: Vec<String>) -> u32 {

@@ -111,4 +111,30 @@ public class StringFidelityTests
         document.Warnings.Should().Contain("NonexistentFontFidelity");
         document.Warnings.Should().NotContain("\\n", "newlines must not arrive as escape sequences");
     }
+
+    [Fact]
+    public void JsonInputsKeepTheirJsonEncoding()
+    {
+        var manifest = MinimalManifest + "\n" + """
+            [[tool.oicana.inputs]]
+            type = "json"
+            key = "title"
+
+            [[tool.oicana.inputs]]
+            type = "json"
+            key = "note"
+            required = false
+            """;
+        var mainTypst = """
+            #let inputs = sys.inputs.at("oicana-inputs")
+            #assert.eq(json(bytes(inputs.at("title"))), "Invoice \"2026\"")
+            #assert.eq(json(bytes(inputs.at("note"))), none)
+            Content
+            """;
+        using var template = new Template(PackTemplate(manifest, mainTypst), new Dictionary<string, JsonNode>
+        {
+            ["title"] = JsonValue.Create("Invoice \"2026\"")!,
+            ["note"] = null!,
+        });
+    }
 }

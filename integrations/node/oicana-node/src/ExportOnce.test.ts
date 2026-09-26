@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import * as zlib from 'node:zlib';
 import { describe, expect, it } from 'vitest';
 import { CompilationMode } from './CompilationMode';
+import { configureDiagnosticColor, DiagnosticColor } from './DiagnosticColor';
 import { Svg } from './ExportFormat';
 import { Template } from './Template';
 
@@ -112,6 +113,23 @@ describe('exportOnce', () => {
 
     expect(Buffer.from(result.document).toString('utf-8')).toContain('<svg');
     expect(result.warnings).toContain('NonexistentFontExportOnce');
+  });
+
+  it('colors diagnostics only when configured', () => {
+    const template = packTemplate({
+      'typst.toml': minimalManifest,
+      'main.typ': '#set text(font: "NonexistentFontColor")\nContent',
+    });
+    const warnings = () =>
+      Template.exportOnce(template, new Map(), new Map(), Svg).warnings;
+
+    try {
+      configureDiagnosticColor(DiagnosticColor.Ansi);
+      expect(warnings()).toContain('\u001b[');
+    } finally {
+      configureDiagnosticColor(DiagnosticColor.None);
+    }
+    expect(warnings()).not.toContain('\u001b[');
   });
 
   it('enforces zip limits', async () => {

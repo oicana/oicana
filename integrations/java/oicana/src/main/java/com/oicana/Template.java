@@ -394,7 +394,7 @@ public class Template implements AutoCloseable {
                 maxEntries(limits),
                 maxTotalDecompressedBytes(limits)
         );
-        return new ExportOnceResult((byte[]) result[0], (String) result[1]);
+        return new ExportOnceResult((byte[]) result[0], Optional.ofNullable((String) result[1]));
     }
 
     /**

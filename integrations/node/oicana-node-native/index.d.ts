@@ -158,7 +158,7 @@ export declare function exportTemplateOnceAsync(
 ): Promise<ExportOnceResult>
 
 /**
- * Load the source of the given file in the template.
+ * Load the raw bytes of the given file in the template.
  *
  * Calling this method requires a previous call to [`register_template`] with the same template
  * identifier.
@@ -201,6 +201,7 @@ export declare function registeredFonts(): Array<RegisteredFont>
 /**
  * Make fonts on disk available to every template registered from now on.
  *
+ * Each path is a font file, or a directory whose font files are all added.
  * Returns the number of font faces that were added.
  */
 export declare function registerFontPaths(paths: Array<string>): number

@@ -70,7 +70,7 @@ public static class Configuration
     /// <summary>
     /// Make fonts on disk available to every template registered from now on.
     /// </summary>
-    /// <param name="paths">Paths to font files.</param>
+    /// <param name="paths">Paths to font files, or to directories whose font files are all added.</param>
     /// <returns>The number of font faces that were added.</returns>
     public static long RegisterFontPaths(params string[] paths)
     {

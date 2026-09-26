@@ -187,7 +187,7 @@ impl TestRunner {
                         .map(|standard| standard.to_string())
                         .collect::<Vec<_>>()
                         .join(", "),
-                    diagnostics,
+                    diagnostics: diagnostics.to_string(),
                 },
             )?;
         }

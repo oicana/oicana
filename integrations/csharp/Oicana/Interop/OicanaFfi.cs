@@ -211,9 +211,9 @@ internal static class OicanaFfi
     }
 
     /// <summary>
-    /// Register a single font file by path, not retaining its data until it is used.
+    /// Register fonts by path, not retaining their data until it is used.
     /// </summary>
-    /// <param name="path">Path to a font file.</param>
+    /// <param name="path">Path to a font file, or to a directory whose font files are all added.</param>
     /// <returns>The number of font faces that were added; 0 if the file could not be read or held no font.</returns>
     public static long RegisterFontPath(string path)
     {
@@ -466,7 +466,7 @@ internal static class OicanaFfi
             IntPtr dataPtr = blobHandle.AddrOfPinnedObject();
             blobHandles.Add(blobHandle);
 
-            var blobInput = new FfiBlobInput() { key = key, data = new Buffer() { data = dataPtr, error = false, len = (uint)blob.Data.Length }, meta = blob.Metadata?.ToString() ?? "{}" };
+            var blobInput = new FfiBlobInput() { key = key, data = new Buffer() { data = dataPtr, error = false, len = (uint)blob.Data.Length }, meta = blob.Metadata?.ToJsonString() ?? "{}" };
             Marshal.StructureToPtr(blobInput, blobsInputsPtr + i * Marshal.SizeOf<FfiBlobInput>(), false);
             i++;
         }
@@ -480,7 +480,7 @@ internal static class OicanaFfi
         int i = 0;
         foreach (var (key, value) in inputs)
         {
-            FfiJsonInput jsonInput = new FfiJsonInput { data = value.ToString(), key = key };
+            FfiJsonInput jsonInput = new FfiJsonInput { data = value?.ToJsonString() ?? "null", key = key };
             Marshal.StructureToPtr(jsonInput, inputsPtr + i * Marshal.SizeOf<FfiJsonInput>(), false);
             i++;
         }

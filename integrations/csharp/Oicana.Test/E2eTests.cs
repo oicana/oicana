@@ -247,6 +247,14 @@ public class E2ETests
         document.Dispose();
     }
 
+    [Fact]
+    public void NegativePageIndicesAreRejected()
+    {
+        ((Action)(() => PageRange.Single(-1))).Should().Throw<ArgumentOutOfRangeException>();
+        ((Action)(() => PageRange.Of(-2))).Should().Throw<ArgumentOutOfRangeException>();
+        ((Action)(() => PageRange.Of(0, -1))).Should().Throw<ArgumentOutOfRangeException>();
+    }
+
     private static byte[] ReadBytes(Stream stream)
     {
         using var memory = new MemoryStream();

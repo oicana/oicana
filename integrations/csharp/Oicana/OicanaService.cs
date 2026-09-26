@@ -14,7 +14,7 @@ namespace Oicana;
 /// </remarks>
 public class OicanaService : IOicanaService
 {
-    private readonly ConcurrentDictionary<string, Template> _templates;
+    private readonly ConcurrentDictionary<string, ITemplate> _templates;
     private readonly ILogger<OicanaService> _logger;
 
     /// <summary>
@@ -23,7 +23,7 @@ public class OicanaService : IOicanaService
     /// <param name="logger"></param>
     public OicanaService(ILogger<OicanaService> logger)
     {
-        _templates = new ConcurrentDictionary<string, Template>();
+        _templates = new ConcurrentDictionary<string, ITemplate>();
         _logger = logger;
     }
 
@@ -49,13 +49,29 @@ public class OicanaService : IOicanaService
         stopWatch.Start();
         var template = new Template(file);
         stopWatch.Stop();
+        Store(id, template);
+        _logger.LogInformation("Warming up the template '{Id}' took {time}ms", id, stopWatch.ElapsedMilliseconds);
+    }
+
+    /// <inheritdoc />
+    public void RegisterTemplate(string id, ITemplate template)
+    {
+        _logger.LogInformation("Registering Oicana template: {Id}", id);
+        Store(id, template);
+    }
+
+    private void Store(string id, ITemplate template)
+    {
         _templates.AddOrUpdate(id, template, (_, replaced) =>
         {
-            _logger.LogInformation("Replacing Oicana template: {Id}", id);
-            replaced.Dispose();
+            if (!ReferenceEquals(replaced, template))
+            {
+                _logger.LogInformation("Replacing Oicana template: {Id}", id);
+                replaced.Dispose();
+            }
+
             return template;
         });
-        _logger.LogInformation("Registration of Oicana template '{Id}' took {time}ms", id, stopWatch.ElapsedMilliseconds);
     }
 
     /// <inheritdoc />

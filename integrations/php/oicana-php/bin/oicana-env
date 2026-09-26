@@ -10,7 +10,8 @@ $iniDir = realpath(implode(DIRECTORY_SEPARATOR, [
 ]));
 
 if ($iniDir === false) {
-    echo 'Oicana installer directory not found. Run "composer install" first.' . PHP_EOL;
+    echo 'The Oicana extension is not installed. Run "composer install" and check its output for errors.' . PHP_EOL;
+    echo 'To install the extension manually, see https://github.com/oicana/oicana/tree/main/integrations/php/oicana-php-installer#if-automatic-installation-fails' . PHP_EOL;
     exit(1);
 }
 

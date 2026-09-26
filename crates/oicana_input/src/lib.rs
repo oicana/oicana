@@ -78,7 +78,7 @@ impl TemplateInputs {
             inputs: Dict::new(),
             kinds: Vec::new(),
             conflicts: Vec::new(),
-            config: CompilationConfig::development(),
+            config: CompilationConfig::production(),
         }
     }
 
@@ -354,7 +354,7 @@ mod tests {
             config
                 .at("production".into(), None)
                 .expect("Mode should be in compilation config"),
-            Value::Bool(false)
+            Value::Bool(true)
         );
     }
 }

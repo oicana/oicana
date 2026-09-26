@@ -15,7 +15,7 @@ readme = { workspace = true }
 [features]
 default = ["pdf", "svg", "png"]
 png = ["dep:typst-render", "dep:png", "dep:thiserror"]
-pdf = ["dep:typst-pdf"]
+pdf = ["dep:typst-pdf", "dep:thiserror"]
 svg = ["dep:typst-svg", "dep:thiserror"]
 
 [dependencies]

@@ -20,7 +20,7 @@ Both NTS (non-thread-safe) and ZTS (thread-safe) builds are published. Requires 
 
 ## If automatic installation fails
 
-Download the binary for your platform from [the releases page](https://github.com/oicana/oicana/releases) and add `extension=/full/path/to/liboicana_php_native.so` to your `php.ini`, the same line this plugin writes for you. Building from source is covered in [`oicana-php-native`](https://github.com/oicana/oicana/tree/main/integrations/php/oicana-php-native).
+Download the binary for your platform from the `oicana_php` release on [the releases page](https://github.com/oicana/oicana/releases). Assets are named after PHP version, OS, architecture and thread safety, for example `oicana-php8.3-linux-x64-nts.so`. Add `extension=/full/path/to/oicana-php8.3-linux-x64-nts.so` to your `php.ini`. Building from source is covered in [`oicana-php-native`](https://github.com/oicana/oicana/tree/main/integrations/php/oicana-php-native).
 
 ## Licensing
 
