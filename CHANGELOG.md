@@ -61,9 +61,12 @@
 - `Template::cleanup()` is now `Template::close()`, matching `CompiledDocument::close()`
 - `configureAutomaticCacheEviction` and `evictCache` moved from `Template` to `Configuration`
 - `Configuration::setDiagnosticColor` is now `Configuration::configureDiagnosticColor`
+- Failures throw `Oicana\OicanaException`, a `\RuntimeException`, instead of a plain `\Exception`
 
 ### Python
 - `Template.cleanup()` is now `Template.close()`, matching `CompiledDocument.close()`
+- Failures raise `oicana.OicanaError`, a subclass of `RuntimeError`
+- Added `CompiledDocument.page_count`
 
 ### Typst package
 - Better error message for input definition without a `type`
