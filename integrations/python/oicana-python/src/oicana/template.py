@@ -467,6 +467,11 @@ class CompiledDocument:
         #: Warnings produced by the compilation of this document, or ``None``.
         self.warnings: str | None = get_warnings(document_id)
 
+    @property
+    def page_count(self) -> int:
+        """Number of pages in the document."""
+        return len(self.pages)
+
     def export(
         self,
         export: ExportFormat = {"format": "pdf"},  # type: ignore[typeddict-item]

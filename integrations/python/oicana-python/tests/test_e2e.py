@@ -214,6 +214,7 @@ def test_compiled_document_handle_survives_template_close() -> None:
     template.close()
 
     assert len(document.pages) > 0
+    assert document.page_count == len(document.pages)
     first_page = PageRange.single(0)
 
     pdf = document.export_pdf(pages=first_page)
