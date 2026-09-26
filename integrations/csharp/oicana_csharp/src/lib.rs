@@ -68,7 +68,9 @@ pub unsafe extern "C" fn unsafe_register_font(font: Buffer) -> i64 {
     })
 }
 
-/// Register a single font file by path, not retaining its data until it is used.
+/// Register fonts by path, not retaining their data until it is used.
+///
+/// The path is a font file, or a directory whose font files are all added.
 ///
 /// Returns the number of font faces that were added. Returns `-1` if the path is
 /// not valid UTF-8 or the call panicked.

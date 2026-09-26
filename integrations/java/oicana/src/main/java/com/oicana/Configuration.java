@@ -64,7 +64,7 @@ public final class Configuration {
     /**
      * Make fonts on disk available to every template registered from now on.
      *
-     * @param paths paths to font files
+     * @param paths paths to font files, or to directories whose font files are all added
      * @return the number of font faces that were added
      */
     public static int registerFontPaths(String... paths) {

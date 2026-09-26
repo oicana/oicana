@@ -50,8 +50,9 @@ let pdf = export_pdf(
     None,
 )?;
 ```
+This also requires `serde_json` for the json input (run `cargo add serde_json`).
 
-Unlike the wrapper integrations, `compile` returns a reusable `CompiledDocument`, and the free `export_*` functions turn it into bytes. The split lets one compilation produce several formats or page ranges.
+`compile` returns a reusable `CompiledDocument`, and the free `export_*` functions turn it into bytes.
 
 `Template::init` only reads the template, it does not compile it, so the first `compile` call pays the full compilation cost. Call it once after `init` for the warm-up that the other integrations run at registration.
 

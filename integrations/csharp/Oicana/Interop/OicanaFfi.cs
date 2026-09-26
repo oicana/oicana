@@ -211,9 +211,9 @@ internal static class OicanaFfi
     }
 
     /// <summary>
-    /// Register a single font file by path, not retaining its data until it is used.
+    /// Register fonts by path, not retaining their data until it is used.
     /// </summary>
-    /// <param name="path">Path to a font file.</param>
+    /// <param name="path">Path to a font file, or to a directory whose font files are all added.</param>
     /// <returns>The number of font faces that were added; 0 if the file could not be read or held no font.</returns>
     public static long RegisterFontPath(string path)
     {

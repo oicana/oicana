@@ -235,8 +235,8 @@ pub extern "system" fn Java_com_oicana_OicanaNative_registerFont<'local>(
         .resolve::<jni::errors::ThrowRuntimeExAndDefault>()
 }
 
-/// Register a single font file by path, returning the number of font faces that
-/// were added. The font data is not retained until it is used.
+/// Register a font file, or every font file in a directory, by path, returning the
+/// number of font faces that were added. The font data is not retained until it is used.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_oicana_OicanaNative_registerFontPath<'local>(
     mut unowned_env: EnvUnowned<'local>,

@@ -597,7 +597,8 @@ def register_font_paths(paths: str | os.PathLike[str] | Iterable[str | os.PathLi
     """Make fonts on disk available to every template registered from now on.
 
     Args:
-        paths: One or more paths to font files.
+        paths: One or more paths to font files, or to directories whose font
+            files are all added.
 
     Returns:
         The number of font faces that were added.

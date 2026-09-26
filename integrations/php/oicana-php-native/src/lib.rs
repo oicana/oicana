@@ -234,6 +234,8 @@ pub fn register_font(font: BinarySlice<u8>) -> PhpResult<i64> {
 
 /// Register fonts from files on disk, not retaining their data until it is used.
 ///
+/// Each path is a font file, or a directory whose font files are all added.
+///
 /// Returns the number of font faces that were added.
 #[php_function]
 #[php(name = "OicanaInternal\\register_font_paths")]

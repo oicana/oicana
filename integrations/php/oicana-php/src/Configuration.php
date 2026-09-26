@@ -71,7 +71,8 @@ final class Configuration
     /**
      * Make fonts on disk available to every template registered from now on.
      *
-     * @param list<string> $paths Paths to font files.
+     * @param list<string> $paths Paths to font files, or to directories whose font
+     *                            files are all added.
      *
      * @return int The number of font faces that were added.
      */

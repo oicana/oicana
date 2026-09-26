@@ -237,7 +237,7 @@ pub fn get_source(template: String, file: String) -> Result<String, String> {
     oicana_ffi_core::get_source(&template, &file).map_err(|error| error.to_string())
 }
 
-/// Load the source of the given file in the template.
+/// Load the raw bytes of the given file in the template.
 ///
 /// Calling this method requires a previous call to [`register_template`] with the same template
 /// identifier.
