@@ -70,11 +70,11 @@ use oicana_template::manifest::TemplateManifest;
 #[cfg(feature = "packed")]
 use oicana_world::manifest::OicanaWorldFiles;
 use oicana_world::{
-    diagnostics::{DiagnosticColor, TemplateDiagnostics},
+    diagnostics::TemplateDiagnostics,
     fonts::FontSource,
     manifest::OicanaWorldManifestError,
     world::{OicanaWorld, WorldCreationError},
-    CompiledDocument, InputError, TemplateCompilationFailure,
+    InputError, TemplateCompilationFailure,
 };
 use std::sync::atomic::{AtomicUsize, Ordering};
 use thiserror::Error;
@@ -90,6 +90,8 @@ pub mod files {
     #[cfg(feature = "preloaded")]
     pub use oicana_files::preloaded;
 }
+
+pub use oicana_world::{diagnostics::DiagnosticColor, CompiledDocument};
 
 /// Template inputs and compilation configuration.
 pub use oicana_input as input;

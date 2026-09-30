@@ -97,6 +97,7 @@
 - `TemplateInputs::new()` now uses production mode by default
 - `export_pdf` returns `PdfExportError`
 - `oicana::typst` re-exports `VirtualPath`, `RootedPath`, `VirtualRoot` and `PathError` to build the `FileId` that `Template::source` and `Template::file` take
+- `CompiledDocument` and `DiagnosticColor` are re-exported at the crate root
 - The manifest config and input definition types collect unknown keys in a public `unknown_fields` map
     - `JsonInputDefinition` is no longer `Eq`
 
