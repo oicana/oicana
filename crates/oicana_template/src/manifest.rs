@@ -2,7 +2,7 @@ use crate::{OicanaConfig, PdfStandard};
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
 use oicana_input::InputDefinition;
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 use std::path::{Component, Path};
 use thiserror::Error;
 use typst::diag::EcoString;
@@ -64,6 +64,18 @@ impl TemplateManifest {
 
         if !is_ident(&self.package.name) {
             return Err(ManifestValidationError::InvalidTemplateName);
+        }
+
+        let mut seen = HashSet::new();
+        let mut duplicates: Vec<String> = Vec::new();
+        for input in &self.tool.oicana.inputs {
+            let key = input.key();
+            if !seen.insert(key) && !duplicates.iter().any(|duplicate| duplicate == key) {
+                duplicates.push(key.to_owned());
+            }
+        }
+        if !duplicates.is_empty() {
+            return Err(ManifestValidationError::DuplicateInputKeys(duplicates));
         }
 
         let tests = &self.tool.oicana.tests;
@@ -227,6 +239,12 @@ pub enum ManifestValidationError {
     /// The template name must be a valid Typst identifier.
     #[error("The template name is not a valid identifier.")]
     InvalidTemplateName,
+    /// Several inputs share a key.
+    #[error(
+        "Input keys must be unique, but these are used more than once: {}.",
+        quote_all(.0)
+    )]
+    DuplicateInputKeys(Vec<String>),
     /// Value of 'tests' needs to be a relative path from the template root to a directory.
     #[error("Value of 'tests' needs to be a relative path from the template root to a directory.")]
     InvalidTestsPath,
@@ -243,6 +261,13 @@ pub enum ManifestValidationError {
          Update Oicana to use this template."
     )]
     UnsupportedManifestVersion(u8),
+}
+
+fn quote_all(keys: &[String]) -> String {
+    keys.iter()
+        .map(|key| format!("'{key}'"))
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 /// Whether a string is a valid Oicana template name.
@@ -448,6 +473,38 @@ mod tests {
         ));
         assert_eq!(manifest.check_manifest_version(), expected);
         assert_eq!(manifest.validate(), expected);
+    }
+
+    #[test]
+    fn rejects_duplicate_input_keys() {
+        let manifest = TemplateManifest::from_toml(
+            r#"
+[package]
+name = "test"
+version = "0.1.0"
+entrypoint = "main.typ"
+
+[tool.oicana]
+manifest_version = 1
+inputs = [
+    { type = "json", key = "data" },
+    { type = "blob", key = "logo" },
+    { type = "blob", key = "data" },
+    { type = "json", key = "data" },
+]
+"#,
+        )
+        .unwrap();
+
+        let error = manifest.validate().unwrap_err();
+        assert_eq!(
+            error,
+            ManifestValidationError::DuplicateInputKeys(vec!["data".to_owned()])
+        );
+        assert_eq!(
+            error.to_string(),
+            "Input keys must be unique, but these are used more than once: 'data'."
+        );
     }
 
     #[test]

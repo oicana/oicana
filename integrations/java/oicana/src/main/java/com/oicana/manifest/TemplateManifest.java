@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.ToNumberPolicy;
-import com.google.gson.annotations.SerializedName;
 
 /**
  * A template's manifest.
@@ -12,11 +11,17 @@ import com.google.gson.annotations.SerializedName;
  * @param packageInfo The Typst package section of the manifest
  * @param oicana The Oicana section of the manifest
  */
-public record TemplateManifest(
-        @SerializedName("package") PackageInfo packageInfo, OicanaConfig oicana) {
+public record TemplateManifest(PackageInfo packageInfo, OicanaConfig oicana) {
 
     private static final Gson GSON =
             new GsonBuilder()
+                    .setFieldNamingStrategy(
+                            field ->
+                                    switch (field.getName()) {
+                                        case "packageInfo" -> "package";
+                                        case "defaultValue" -> "default";
+                                        default -> field.getName();
+                                    })
                     .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
                     .registerTypeAdapter(
                             InputDefinition.class,

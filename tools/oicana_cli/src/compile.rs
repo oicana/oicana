@@ -153,14 +153,16 @@ pub(crate) fn build_inputs(args: &CompileArgs) -> anyhow::Result<TemplateInputs>
     }
     for pair in &args.json {
         let (key, path) = split_pair(pair)?;
-        let input = read_to_string(path).context("Failed to read json input file.")?;
+        let input = read_to_string(path)
+            .with_context(|| format!("Failed to read json input file '{path}'."))?;
         inputs.with_input(JsonInput::new(key, input));
     }
 
     let mut blobs = HashMap::new();
     for pair in &args.blob {
         let (key, path) = split_pair(pair)?;
-        let blob = read(path).context("Failed to read blob input file.")?;
+        let blob =
+            read(path).with_context(|| format!("Failed to read blob input file '{path}'."))?;
         blobs.insert(key.to_owned(), BlobInput::new(key, blob));
     }
     for pair in &args.blob_meta {
@@ -168,9 +170,11 @@ pub(crate) fn build_inputs(args: &CompileArgs) -> anyhow::Result<TemplateInputs>
         let Some(blob) = blobs.get_mut(key) else {
             bail!("Blob metadata '{pair}' has no blob input with the key '{key}'.");
         };
-        let meta = read_to_string(path).context("Failed to read json file as blob metadata.")?;
-        blob.value.metadata = serde_json::from_str(&meta)
-            .context("Failed to convert blob metadata to a Typst dictionary.")?;
+        let meta = read_to_string(path)
+            .with_context(|| format!("Failed to read blob metadata file '{path}'."))?;
+        blob.value.metadata = serde_json::from_str(&meta).with_context(|| {
+            format!("Failed to convert blob metadata in '{path}' to a Typst dictionary.")
+        })?;
     }
 
     for (_, blob) in blobs {

@@ -1,7 +1,5 @@
 package com.oicana.manifest;
 
-import com.google.gson.annotations.SerializedName;
-
 /**
  * An input taking a JSON value.
  *
@@ -17,7 +15,7 @@ import com.google.gson.annotations.SerializedName;
 public record JsonInputDefinition(
         String key,
         boolean required,
-        @SerializedName("default") String defaultValue,
+        String defaultValue,
         String development,
         String schema,
         boolean validate)

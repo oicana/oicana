@@ -135,9 +135,10 @@ final class InstallerPlugin implements PluginInterface, EventSubscriberInterface
         $io->write('');
 
         if (PHP_OS_FAMILY === 'Windows') {
-            $io->write(sprintf('<comment>  set PHP_INI_SCAN_DIR=";%s"</comment>', $iniDir));
+            $current = getenv('PHP_INI_SCAN_DIR') ?: '';
+            $io->write(sprintf('<comment>  set "PHP_INI_SCAN_DIR=%s;%s"</comment>', $current, $iniDir));
         } else {
-            $io->write(sprintf('<comment>  export PHP_INI_SCAN_DIR=":%s"</comment>', $iniDir));
+            $io->write(sprintf('<comment>  export PHP_INI_SCAN_DIR="${PHP_INI_SCAN_DIR:-}:%s"</comment>', $iniDir));
         }
 
         $io->write('');

@@ -33,6 +33,7 @@ use validate::VALIDATE_AFTER_HELP;
 use watch::watch;
 
 fn main() -> ExitCode {
+    reset_sigpipe();
     match run() {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {
@@ -41,6 +42,20 @@ fn main() -> ExitCode {
         }
     }
 }
+
+/// Let a closed stdout end the process quietly
+///
+/// E.g. for `oicana test -a | head -n 1`
+#[cfg(unix)]
+fn reset_sigpipe() {
+    // SAFETY: runs before any other thread exists.
+    unsafe {
+        libc::signal(libc::SIGPIPE, libc::SIG_DFL);
+    }
+}
+
+#[cfg(not(unix))]
+fn reset_sigpipe() {}
 
 fn run() -> Result<(), Error> {
     let cli = Cli::parse();

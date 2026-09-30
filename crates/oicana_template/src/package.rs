@@ -116,7 +116,7 @@ struct DependencyPackage {
 }
 
 /// Build a matcher from the `exclude` field of a dependency's `typst.toml`.
-fn dependency_exclude_matcher(package_dir: &Path) -> Gitignore {
+pub fn dependency_exclude_matcher(package_dir: &Path) -> Gitignore {
     let manifest = std::fs::read_to_string(package_dir.join("typst.toml"))
         .ok()
         .and_then(|content| toml::from_str::<DependencyManifest>(&content).ok())

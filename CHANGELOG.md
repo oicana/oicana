@@ -26,6 +26,10 @@
 - `validate` warns about unknown keys in `[tool.oicana]`
 - `pack` warns about `import` and `include` with a computed source, since packages imported that way are not packed
 - With `-a`, templates with a broken manifest are skipped with a warning instead of aborting commands by default.
+- `new` rejects a `--version` that is not a valid package version
+- `validate` and `pack` reject manifests that declare several inputs with the same key
+- Errors about unreadable input and metadata files name the file
+- Piping the output into a command that exits early, like `head`, no longer panics
 
 ### Java
 - A JVM that has not granted native access now fails with an `OicanaException` naming the required `--enable-native-access` flag
@@ -36,6 +40,7 @@
   - Call `Configuration.disableAutomaticCacheEviction()` to turn automatic eviction off
 - `Configuration.setDiagnosticColor` is now `Configuration.configureDiagnosticColor`
 - `ExportOnceResult.warnings()` returns an `Optional<String>` instead of a nullable `String`
+- The manifest records no longer carry Gson annotations, so Gson stays an internal dependency
 
 ### Node.js
 - `engines` declares the actual minimum of `^20.19.0 || >=22.12.0`; the package is ESM-only, so CommonJS callers need a Node version with `require(esm)`
@@ -73,6 +78,7 @@
 - `configureAutomaticCacheEviction` and `evictCache` moved from `Template` to `Configuration`
 - `Configuration::setDiagnosticColor` is now `Configuration::configureDiagnosticColor`
 - Failures throw `Oicana\OicanaException`, a `\RuntimeException`, instead of a plain `\Exception`
+- The printed `PHP_INI_SCAN_DIR` appends to an existing value instead of replacing it
 
 ### Python
 - `Template.cleanup()` is now `Template.close()`, matching `CompiledDocument.close()`

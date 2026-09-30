@@ -20,9 +20,10 @@ echo 'Run the following to enable the Oicana extension in this shell session:' .
 echo PHP_EOL;
 
 if (PHP_OS_FAMILY === 'Windows') {
-    echo '  set PHP_INI_SCAN_DIR=";' . $iniDir . '"' . PHP_EOL;
+    $current = getenv('PHP_INI_SCAN_DIR') ?: '';
+    echo '  set "PHP_INI_SCAN_DIR=' . $current . ';' . $iniDir . '"' . PHP_EOL;
 } else {
-    echo '  export PHP_INI_SCAN_DIR=":' . $iniDir . '"' . PHP_EOL;
+    echo '  export PHP_INI_SCAN_DIR="${PHP_INI_SCAN_DIR:-}:' . $iniDir . '"' . PHP_EOL;
 }
 
 echo PHP_EOL;

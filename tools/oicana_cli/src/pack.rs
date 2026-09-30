@@ -3,11 +3,12 @@ use crate::target::TargetArgs;
 use anyhow::Context;
 use clap::Args;
 use console::{style, Emoji};
+use ignore::gitignore::Gitignore;
 use log::info;
 use oicana::files::native::{package_data_dir, NativeTemplate};
 use oicana::files::packed::ZipLimits;
 use oicana::files::TemplateFiles;
-use oicana::template::package::package_with_dependencies;
+use oicana::template::package::{dependency_exclude_matcher, package_with_dependencies};
 use std::collections::HashSet;
 use std::ffi::OsStr;
 use std::fs::{create_dir_all, File};
@@ -76,7 +77,8 @@ pub fn pack(args: PackArgs) -> anyhow::Result<()> {
 
         let files = NativeTemplate::new(&template.path, packages.clone());
 
-        let dependencies = collect_dependencies(&template.path, &files)?;
+        let exclude_matcher = template.manifest.build_exclude_matcher();
+        let dependencies = collect_dependencies(&template.path, &exclude_matcher, &files)?;
         for dynamic_import in &dependencies.dynamic_imports {
             let warning = style("Warning").yellow();
             println!(
@@ -102,7 +104,6 @@ pub fn pack(args: PackArgs) -> anyhow::Result<()> {
             })
         });
 
-        let exclude_matcher = template.manifest.build_exclude_matcher();
         package_with_dependencies(
             &template.path,
             out_file,
@@ -147,8 +148,12 @@ struct Dependencies {
     dynamic_imports: Vec<String>,
 }
 
-/// Collect all package dependencies by scanning imports in template `.typ` files.
-fn collect_dependencies(root: &Path, files: &NativeTemplate) -> anyhow::Result<Dependencies> {
+/// Collect all package dependencies by scanning imports in (to be packed) `.typ` files.
+fn collect_dependencies(
+    root: &Path,
+    exclude_matcher: &Gitignore,
+    files: &NativeTemplate,
+) -> anyhow::Result<Dependencies> {
     let mut collected = HashSet::new();
     let mut dependencies = Dependencies {
         packages: Vec::new(),
@@ -157,6 +162,7 @@ fn collect_dependencies(root: &Path, files: &NativeTemplate) -> anyhow::Result<D
 
     scan_imports(
         root,
+        exclude_matcher,
         &VirtualRoot::Project,
         files,
         &mut collected,
@@ -168,6 +174,7 @@ fn collect_dependencies(root: &Path, files: &NativeTemplate) -> anyhow::Result<D
 
 fn scan_imports(
     dir: &Path,
+    exclude_matcher: &Gitignore,
     virtual_root: &VirtualRoot,
     files: &NativeTemplate,
     collected: &mut HashSet<PackageSpec>,
@@ -175,7 +182,13 @@ fn scan_imports(
 ) -> anyhow::Result<()> {
     let walk = walkdir::WalkDir::new(dir)
         .into_iter()
-        .filter_entry(|entry| entry.file_name() != OsStr::new(".dependencies"));
+        .filter_entry(|entry| {
+            let relative = entry.path().strip_prefix(dir).unwrap_or(entry.path());
+            entry.file_name() != OsStr::new(".dependencies")
+                && !exclude_matcher
+                    .matched_path_or_any_parents(relative, entry.file_type().is_dir())
+                    .is_ignore()
+        });
     for entry in walk {
         let entry = entry.context("Failed to read the directory to scan for imports")?;
         let path = entry.path();
@@ -229,6 +242,7 @@ fn scan_imports(
 
             scan_imports(
                 &package_dir,
+                &dependency_exclude_matcher(&package_dir),
                 &VirtualRoot::Package(spec),
                 files,
                 collected,
@@ -316,7 +330,7 @@ entrypoint = "package.typ"
         }
         let files = NativeTemplate::new(&temp_template, temp_packages);
 
-        let deps = collect_dependencies(&temp_template, &files)
+        let deps = collect_dependencies(&temp_template, &Gitignore::empty(), &files)
             .unwrap()
             .packages;
         assert!(deps.is_empty());
@@ -324,6 +338,63 @@ entrypoint = "package.typ"
             temp_template.join(".dependencies").try_exists().ok(),
             Some(false)
         );
+    }
+
+    #[test]
+    fn skips_imports_in_excluded_files() {
+        let tempdir = tempdir().unwrap();
+        let temp_template = tempdir.path().join("template");
+        create_dir_all(temp_template.join("drafts")).unwrap();
+        let temp_packages = tempdir.path().join("cache");
+        create_dir_all(&temp_packages).unwrap();
+        std::fs::write(
+            temp_template.join("drafts/old.typ"),
+            "#import \"@local/missing:0.1.0\": *",
+        )
+        .unwrap();
+
+        let mut builder = ignore::gitignore::GitignoreBuilder::new("");
+        builder.add_line(None, "drafts/").unwrap();
+        let files = NativeTemplate::new(&temp_template, temp_packages);
+        let deps = collect_dependencies(&temp_template, &builder.build().unwrap(), &files)
+            .unwrap()
+            .packages;
+
+        assert!(deps.is_empty());
+    }
+
+    #[test]
+    fn skips_imports_in_files_a_dependency_excludes() {
+        let tempdir = tempdir().unwrap();
+        let temp_template = tempdir.path().join("template");
+        create_dir_all(&temp_template).unwrap();
+        let temp_packages = tempdir.path().join("cache");
+        std::fs::write(
+            temp_template.join("test.typ"),
+            "#import \"@local/test:0.1.0\": *",
+        )
+        .unwrap();
+        let spec = PackageSpec::from_str("@local/test:0.1.0").unwrap();
+        create_mock_package(&temp_packages, &spec, "Some package content");
+        let package_dir = temp_packages.join("local/test/0.1.0");
+        create_dir_all(package_dir.join("examples")).unwrap();
+        std::fs::write(
+            package_dir.join("examples/demo.typ"),
+            "#import \"@local/missing:0.1.0\": *",
+        )
+        .unwrap();
+        let mut manifest = std::fs::OpenOptions::new()
+            .append(true)
+            .open(package_dir.join("typst.toml"))
+            .unwrap();
+        manifest.write_all(b"exclude = [\"examples\"]\n").unwrap();
+
+        let files = NativeTemplate::new(&temp_template, temp_packages);
+        let deps = collect_dependencies(&temp_template, &Gitignore::empty(), &files)
+            .unwrap()
+            .packages;
+
+        assert_eq!(deps.len(), 1);
     }
 
     #[test]
@@ -346,7 +417,7 @@ entrypoint = "package.typ"
         create_mock_package(&temp_packages, &spec, "Some package content");
 
         let files = NativeTemplate::new(&temp_template, temp_packages);
-        let deps = collect_dependencies(&temp_template, &files)
+        let deps = collect_dependencies(&temp_template, &Gitignore::empty(), &files)
             .unwrap()
             .packages;
 
@@ -376,7 +447,7 @@ entrypoint = "package.typ"
         create_mock_package(&temp_packages, &spec, "Some package content");
 
         let files = NativeTemplate::new(&temp_template, temp_packages);
-        let deps = collect_dependencies(&temp_template, &files)
+        let deps = collect_dependencies(&temp_template, &Gitignore::empty(), &files)
             .unwrap()
             .packages;
 
@@ -401,7 +472,7 @@ entrypoint = "package.typ"
         create_mock_package(&temp_packages, &second, "#import \"@local/first:0.1.0\": *");
 
         let files = NativeTemplate::new(&temp_template, temp_packages);
-        let deps = collect_dependencies(&temp_template, &files)
+        let deps = collect_dependencies(&temp_template, &Gitignore::empty(), &files)
             .unwrap()
             .packages;
 
@@ -421,7 +492,8 @@ entrypoint = "package.typ"
             .unwrap();
 
         let files = NativeTemplate::new(&temp_template, tempdir.path().join("cache"));
-        let dependencies = collect_dependencies(&temp_template, &files).unwrap();
+        let dependencies =
+            collect_dependencies(&temp_template, &Gitignore::empty(), &files).unwrap();
 
         assert!(dependencies.packages.is_empty());
         assert_eq!(dependencies.dynamic_imports.len(), 1);
@@ -452,7 +524,7 @@ entrypoint = "package.typ"
             create_mock_package(&temp_packages, &spec, "Some package content");
 
             let files = NativeTemplate::new(&temp_template, temp_packages);
-            let deps = collect_dependencies(&temp_template, &files)
+            let deps = collect_dependencies(&temp_template, &Gitignore::empty(), &files)
                 .unwrap()
                 .packages;
 
@@ -487,7 +559,7 @@ entrypoint = "package.typ"
         create_mock_package(&temp_packages, &spec2, "Some other package content");
 
         let files = NativeTemplate::new(&temp_template, temp_packages);
-        let deps = collect_dependencies(&temp_template, &files)
+        let deps = collect_dependencies(&temp_template, &Gitignore::empty(), &files)
             .unwrap()
             .packages;
 

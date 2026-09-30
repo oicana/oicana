@@ -1,7 +1,5 @@
 package com.oicana.manifest;
 
-import com.google.gson.annotations.SerializedName;
-
 /**
  * An input taking arbitrary bytes.
  *
@@ -14,6 +12,6 @@ import com.google.gson.annotations.SerializedName;
 public record BlobInputDefinition(
         String key,
         boolean required,
-        @SerializedName("default") BlobFallback defaultValue,
+        BlobFallback defaultValue,
         BlobFallback development)
         implements InputDefinition {}

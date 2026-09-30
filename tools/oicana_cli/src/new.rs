@@ -4,6 +4,7 @@ use color_print::cstr;
 use oicana::template::manifest::is_valid_template_name;
 use std::fs;
 use std::path::{Path, PathBuf};
+use typst::syntax::package::PackageVersion;
 
 #[rustfmt::skip]
 pub const NEW_AFTER_HELP: &str = cstr!("\
@@ -17,8 +18,12 @@ pub struct NewArgs {
     /// Name of the new template (also the directory and Typst package name).
     name: String,
     /// Initial template version.
-    #[arg(long, default_value = "0.1.0")]
-    version: String,
+    #[arg(long, default_value = "0.1.0", value_parser = parse_version)]
+    version: PackageVersion,
+}
+
+fn parse_version(version: &str) -> Result<PackageVersion, String> {
+    version.parse().map_err(|error| format!("{error}"))
 }
 
 const MAIN_FILE: &str = r#"#set document(date: datetime.today())
@@ -30,7 +35,7 @@ Edit `main.typ` to design your template.
 
 pub fn new(args: NewArgs) -> anyhow::Result<()> {
     let dir = PathBuf::from(&args.name);
-    create_template(&dir, &args.name, &args.version)?;
+    create_template(&dir, &args.name, &args.version.to_string())?;
     println!(
         "Created Oicana template '{}' in ./{}/",
         args.name, args.name
