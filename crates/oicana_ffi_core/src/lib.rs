@@ -1,9 +1,9 @@
 //! Shared core logic for Oicana FFI integrations.
 //!
-//! Each language integration (node, python, php, java, csharp, browser-wasm) is
-//! a thin shim around the functions in this crate. The shim handles marshaling
-//! between language-native types and the neutral types exposed here, then calls
-//! into the corresponding function in this crate.
+//! Each language integration (node, python, php, java, csharp, browser-wasm) has
+//! thin native bindings around the functions in this crate. The native bindings
+//! handle marshaling between language-native types and the neutral types exposed
+//! here, then call into the corresponding function in this crate.
 
 use std::collections::HashMap;
 use std::io::Cursor;
