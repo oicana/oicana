@@ -492,9 +492,7 @@ impl Buffer {
                 u32::MAX
             ));
         };
-        let mut buf = value.into_boxed_slice();
-        let data = buf.as_mut_ptr();
-        std::mem::forget(buf);
+        let data = Box::into_raw(value.into_boxed_slice()) as *mut u8;
 
         Buffer {
             data,

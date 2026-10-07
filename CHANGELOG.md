@@ -1,6 +1,6 @@
 # Changelog
 
-## Upcoming
+## v0.9.0
 
 - registering fonts by path accepts a directory and adds every font file in its tree, like the CLI's `--font-path` already did
 - `Template.inputs` is now `Template.manifest` in every integration and returns a typed manifest
