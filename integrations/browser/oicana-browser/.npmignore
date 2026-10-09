@@ -1,5 +1,0 @@
-src/**/*.test.ts
-test-setup.ts
-testOutput/
-vite.config.ts
-*.tgz

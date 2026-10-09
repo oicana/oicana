@@ -11,14 +11,14 @@ Oicana runs the [Typst](https://typst.app/) compiler as WebAssembly in the brows
 ## Installation
 
 ```bash
-npm install @oicana/browser @oicana/browser-wasm
+npm install @oicana/browser
 ```
 
 ## Quick start
 
 ```typescript
 import { Template, initialize } from '@oicana/browser';
-import wasmUrl from '@oicana/browser-wasm/oicana_browser_wasm_bg.wasm?url';
+import wasmUrl from '@oicana/browser/oicana.wasm?url';
 
 await initialize(wasmUrl);
 

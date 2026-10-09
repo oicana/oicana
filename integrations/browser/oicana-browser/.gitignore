@@ -1,4 +1,5 @@
 dist/
+wasm/
 node_modules/
 testOutput/*.png
 package-lock.json

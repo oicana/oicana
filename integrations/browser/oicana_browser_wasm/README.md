@@ -1,27 +1,18 @@
-# @oicana/browser-wasm
+# oicana_browser_wasm
 
-> **This is the raw WebAssembly build of [Oicana](https://oicana.com).** Install [`@oicana/browser`](https://www.npmjs.com/package/@oicana/browser) instead. It depends on this package and wraps it in a documented, fully typed API. You install both, but develop against `@oicana/browser`.
-
-The compiled WASM module and its `wasm-bindgen` glue. The exports here take and return raw handles, with no stability guarantees between releases.
+The WebAssembly build of [Oicana](https://oicana.com) and its `wasm-bindgen` glue. It is not published on its own, but bundled into [`@oicana/browser`](https://www.npmjs.com/package/@oicana/browser), which wraps the raw exports in a documented, fully typed API.
 
 ## Development
 
-Build the npm package:
+Build the WASM into `../oicana-browser/wasm`:
 
 ```bash
-wasm-pack build --release --target web --scope oicana integrations/browser/oicana_browser_wasm
+npm run build:wasm
 ```
 
-Then `npm pack` in the `pkg` directory and point `integrations/browser/oicana-browser/package.json` at the resulting file before `npm i && npm run build`.
+Run this in `integrations/browser/oicana-browser`, then `npm i && npm run build`. For faster iteration, run the `wasm-pack` command from the `build:wasm` script with `--no-opt` added to skip `wasm-opt`.
 
-### Linking for faster iteration
-
-Build without optimization (`--no-opt`), then:
-
-1. Set the package name in `pkg/package.json` to `@oicana/browser-wasm`
-2. Run `npm link` in `pkg/`
-3. In `../oicana-browser`: `npm link @oicana/browser-wasm`, `npm run build`, `npm link`
-4. In the end-user project: `npm link @oicana/browser-wasm @oicana/browser`
+To try a local build in another project, `npm link` in `../oicana-browser`, then `npm link @oicana/browser` in that project.
 
 ## Licensing
 

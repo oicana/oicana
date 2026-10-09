@@ -10,15 +10,11 @@ permissions:
   contents: write
 
 jobs:
-  build-and-publish-wasm:
+  build-and-publish:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
       id-token: write
-    env:
-      CRATE_DIR: oicana_browser_wasm
-      LIB_NAME: oicana-browser-wasm
-      SCOPE: oicana
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -32,80 +28,8 @@ jobs:
       - uses: taiki-e/install-action@9983c65e42da123ff25d1f78505eb6de315aa172 # v2
         with:
           tool: wasm-pack
-      - name: Build release
-        run: wasm-pack build --release --target web --scope ${{ env.SCOPE }} integrations/browser/${{ env.CRATE_DIR }}
-      - name: Copy License file
-        run: cp LICENSE.md integrations/browser/$CRATE_DIR/pkg
-      - name: rename package
-        run: jq '.name = "@oicana/browser-wasm"' package.json > tmp.json && mv tmp.json package.json
-        working-directory: integrations/browser/${{ env.CRATE_DIR }}/pkg
-      - name: Pack
-        run: npm pack
-        working-directory: integrations/browser/${{ env.CRATE_DIR }}/pkg
-      - name: version
-        id: version
-        run: echo "version=$(jq -r '.version' package.json)" >> $GITHUB_OUTPUT
-        working-directory: integrations/browser/${{ env.CRATE_DIR }}/pkg
-      - uses: actions/upload-artifact@v7
-        with:
-          name: "oicana-browser-wasm-${{ steps.version.outputs.version }}.tgz"
-          path: integrations/browser/${{ env.CRATE_DIR }}/pkg/${{ env.LIB_NAME }}-*.tgz
-      - name: Publish
-        run: |
-          name=$(node -p "require('./package.json').name")
-          version=$(node -p "require('./package.json').version")
-
-          echo "Checking if $name@$version already exists:"
-          if npm view "$name@$version" > /dev/null 2>&1; then
-            echo "Version $version already exists on npmjs. Not publishing."
-            exit 0
-          fi
-          echo "Version $version not found on npmjs. Proceeding to publish..."
-
-          if [ -z "$ACTIONS_ID_TOKEN_REQUEST_URL" ]; then
-            echo "No OIDC token available, the job is missing 'permissions: id-token: write'."
-            exit 1
-          fi
-
-          if echo "$version" | grep -Eq "^[0-9]+\.[0-9]+\.[0-9]+$";
-          then
-            npm publish --access public
-          elif echo "$version" | grep -Eq "^[0-9]+\.[0-9]+\.[0-9]+";
-          then
-            npm publish --access public --tag next
-          fi
-        working-directory: integrations/browser/${{ env.CRATE_DIR }}/pkg
-
-  build-and-publish-wrapper:
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-      id-token: write
-    needs:
-      - build-and-publish-wasm
-    env:
-      LIB_NAME: browser
-      SCOPE: oicana
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 24
-      - name: Wait for the wasm package
-        # a freshly published version takes a few minutes to become installable
-        run: |
-          version=$(jq -r '.dependencies["@oicana/browser-wasm"]' package.json)
-          for attempt in $(seq 1 60); do
-            if npm view "@oicana/browser-wasm@$version" version --prefer-online > /dev/null 2>&1; then
-              echo "@oicana/browser-wasm@$version is available"
-              exit 0
-            fi
-            echo "Attempt $attempt: @oicana/browser-wasm@$version is not on npmjs yet, waiting"
-            sleep 30
-          done
-          echo "@oicana/browser-wasm@$version did not become available within 30 minutes"
-          exit 1
+      - name: Build wasm
+        run: npm run build:wasm
         working-directory: integrations/browser/oicana-browser
       - name: Install dependencies
         run: npm i
@@ -123,7 +47,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: "oicana-browser-${{ steps.version.outputs.version }}.tgz"
-          path: integrations/browser/oicana-browser/${{ env.SCOPE }}-${{ env.LIB_NAME }}-*.tgz
+          path: integrations/browser/oicana-browser/oicana-browser-*.tgz
       - name: Publish
         run: |
           name=$(node -p "require('./package.json').name")

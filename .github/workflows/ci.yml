@@ -161,15 +161,9 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: browser-wasm
-          path: ./integrations/browser/oicana_browser_wasm/pkg
-      - name: Link browser-wasm
-        run: npm link
-        working-directory: ./integrations/browser/oicana_browser_wasm/pkg
+          path: ./integrations/browser/oicana-browser/wasm
       - name: Install dependencies
-        run: |
-          npm pkg delete dependencies['@oicana/browser-wasm']
-          npm install
-          npm link @oicana/browser-wasm
+        run: npm install
         working-directory: integrations/browser/oicana-browser
       - name: Lint
         run: npm run lint
@@ -353,18 +347,13 @@ jobs:
         with:
           tool: wasm-pack
       - name: build browser wasm
-        run: wasm-pack build --release --target web --scope oicana integrations/browser/oicana_browser_wasm
-      - name: rename package
-        run: jq '.name = "@oicana/browser-wasm"' package.json > tmp.json && mv tmp.json package.json
-        working-directory: ./integrations/browser/oicana_browser_wasm/pkg
+        run: npm run build:wasm
+        working-directory: ./integrations/browser/oicana-browser
       - name: Upload browser-wasm
         uses: actions/upload-artifact@v7
         with:
           name: browser-wasm
-          path: |
-            ./integrations/browser/oicana_browser_wasm/pkg/oicana_browser_wasm**
-            ./integrations/browser/oicana_browser_wasm/pkg/package.json
-            ./integrations/browser/oicana_browser_wasm/pkg/README.md
+          path: ./integrations/browser/oicana-browser/wasm/oicana_browser_wasm*
           if-no-files-found: error
 
   build-node-native:
@@ -664,15 +653,9 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: browser-wasm
-          path: ./integrations/browser/oicana_browser_wasm/pkg
-      - name: Enable npm link in browser-wasm
-        run: npm link
-        working-directory: ./integrations/browser/oicana_browser_wasm/pkg
+          path: ./integrations/browser/oicana-browser/wasm
       - name: install browser integration
-        run: |
-          npm pkg delete dependencies['@oicana/browser-wasm']
-          npm install
-          npm link @oicana/browser-wasm
+        run: npm install
         working-directory: ./integrations/browser/oicana-browser
       - name: test browser integration
         run: npm run test
