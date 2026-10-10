@@ -298,6 +298,12 @@ jobs:
             zig: true
             lib: liboicana_csharp.so
             artifact: linux-musl-x64
+          # Temporary: only built in the publish workflow otherwise; remove before merging
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+            zig: true
+            lib: liboicana_csharp.so
+            artifact: linux-musl-arm64
           - os: macos-latest
             lib: liboicana_csharp.dylib
             artifact: osx-arm64
