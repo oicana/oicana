@@ -9,6 +9,12 @@
   - Bundlers that resolve `new URL(..., import.meta.url)` don't need the WASM import anymore
   - If using Vite and the import is dropped, add `@oicana/browser` to `optimizeDeps.exclude` for the dev server
 
+### C#
+- New platforms: Alpine and other musl-based Linux (`linux-musl-x64`, `linux-musl-arm64`) and Windows arm64 (`win-arm64`)
+- The `Oicana` package is split into `Oicana.Core` and one `Oicana.Native.<rid>` package per platform
+  - `Oicana` depends on all of them, so existing installs keep working without changes
+  - For smaller deployments, reference `Oicana.Core` and only the native packages you need
+
 ## v0.9.0
 
 - registering fonts by path accepts a directory and adds every font file in its tree, like the CLI's `--font-path` already did

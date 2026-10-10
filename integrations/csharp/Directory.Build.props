@@ -1,0 +1,10 @@
+<Project>
+    <PropertyGroup>
+        <Version>0.9.0</Version>
+        <Authors>Oicana</Authors>
+        <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+        <PackageProjectUrl>https://oicana.com</PackageProjectUrl>
+        <RepositoryType>git</RepositoryType>
+        <RepositoryUrl>https://github.com/oicana/oicana</RepositoryUrl>
+    </PropertyGroup>
+</Project>

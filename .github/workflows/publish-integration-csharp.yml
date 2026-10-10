@@ -53,9 +53,9 @@ jobs:
             ERRORS+=("oicana_csharp/Cargo.toml has version $CARGO_VERSION")
           fi
 
-          CSPROJ_VERSION=$(grep -oP '(?<=<Version>)[^<]+' integrations/csharp/Oicana/Oicana.csproj | head -n1)
-          if [[ "$CSPROJ_VERSION" != "$VERSION" ]]; then
-            ERRORS+=("Oicana.csproj has version $CSPROJ_VERSION")
+          PROPS_VERSION=$(grep -oP '(?<=<Version>)[^<]+' integrations/csharp/Directory.Build.props | head -n1)
+          if [[ "$PROPS_VERSION" != "$VERSION" ]]; then
+            ERRORS+=("Directory.Build.props has version $PROPS_VERSION")
           fi
 
           if [[ ${#ERRORS[@]} -gt 0 ]]; then
@@ -68,86 +68,61 @@ jobs:
 
           echo "All version sources match: ${VERSION}"
 
-  build-linux-x64:
+  build:
     needs: validate-version
-    runs-on: ubuntu-24.04
-    container: quay.io/pypa/manylinux_2_28_x86_64:2026.09.14-1
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-      - name: Install rust toolchain
-        uses: dtolnay/rust-toolchain@ce678459e9fc7500d337468f904b95f1b5c10b5e # 1.98.1
-      - name: Build release
-        run: cargo build --release -p ${{ env.LIB_NAME }}
-      - uses: actions/upload-artifact@v7
-        with:
-          name: oicana-csharp-linux-x64
-          path: target/release/lib${{ env.LIB_NAME }}.so
-  build-linux-arm64:
-    needs: validate-version
-    runs-on: ubuntu-24.04-arm
-    container: quay.io/pypa/manylinux_2_28_aarch64:2026.09.14-1
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-      - name: Install rust toolchain
-        uses: dtolnay/rust-toolchain@ce678459e9fc7500d337468f904b95f1b5c10b5e # 1.98.1
-      - name: Build release
-        run: cargo build --release -p ${{ env.LIB_NAME }}
-      - uses: actions/upload-artifact@v7
-        with:
-          name: oicana-csharp-linux-arm64
-          path: target/release/lib${{ env.LIB_NAME }}.so
-  build-windows:
-    needs: validate-version
-    runs-on: windows-2025
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-      - name: Install rust toolchain
-        uses: dtolnay/rust-toolchain@ce678459e9fc7500d337468f904b95f1b5c10b5e # 1.98.1
-      - name: Build release
-        run: cargo build --release -p ${{ env.LIB_NAME }}
-      - uses: actions/upload-artifact@v7
-        with:
-          name: oicana-csharp-windows
-          path: target/release/${{ env.LIB_NAME }}.dll
-  build-mac-x86:
-    needs: validate-version
-    runs-on: macos-26
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { rid: linux-x64, os: ubuntu-24.04, container: 'quay.io/pypa/manylinux_2_28_x86_64:2026.09.14-1', lib: liboicana_csharp.so }
+          - { rid: linux-arm64, os: ubuntu-24.04-arm, container: 'quay.io/pypa/manylinux_2_28_aarch64:2026.09.14-1', lib: liboicana_csharp.so }
+          - { rid: linux-musl-x64, os: ubuntu-24.04, target: x86_64-unknown-linux-musl, zig: true, lib: liboicana_csharp.so }
+          - { rid: linux-musl-arm64, os: ubuntu-24.04, target: aarch64-unknown-linux-musl, zig: true, lib: liboicana_csharp.so }
+          - { rid: osx-x64, os: macos-26, target: x86_64-apple-darwin, lib: liboicana_csharp.dylib }
+          - { rid: osx-arm64, os: macos-26, target: aarch64-apple-darwin, lib: liboicana_csharp.dylib }
+          - { rid: win-x64, os: windows-2025, lib: oicana_csharp.dll }
+          - { rid: win-arm64, os: windows-2025, target: aarch64-pc-windows-msvc, lib: oicana_csharp.dll }
+    runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
       - name: Install rust toolchain
         uses: dtolnay/rust-toolchain@ce678459e9fc7500d337468f904b95f1b5c10b5e # 1.98.1
         with:
-          targets: x86_64-apple-darwin
+          targets: ${{ matrix.target }}
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
+        if: matrix.zig
+        with:
+          version: 0.14.1
+      - name: Install cargo-zigbuild
+        uses: taiki-e/install-action@9983c65e42da123ff25d1f78505eb6de315aa172 # v2
+        if: matrix.zig
+        with:
+          tool: cargo-zigbuild
       - name: Build release
-        run: cargo build --release -p ${{ env.LIB_NAME }} --target=x86_64-apple-darwin
+        run: |
+          if [[ -n "${{ matrix.zig }}" ]]; then
+            RUSTFLAGS="-C target-feature=-crt-static" cargo zigbuild --release -p ${{ env.LIB_NAME }} --target ${{ matrix.target }}
+          elif [[ -n "${{ matrix.target }}" ]]; then
+            cargo build --release -p ${{ env.LIB_NAME }} --target ${{ matrix.target }}
+          else
+            cargo build --release -p ${{ env.LIB_NAME }}
+          fi
+          mkdir dist
+          cp "target/${{ matrix.target }}/release/${{ matrix.lib }}" dist/
       - uses: actions/upload-artifact@v7
         with:
-          name: oicana-csharp-macos-x86
-          path: target/x86_64-apple-darwin/release/lib${{ env.LIB_NAME }}.dylib
-  build-mac-arm:
-    needs: validate-version
-    runs-on: macos-26
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-      - name: Install rust toolchain
-        uses: dtolnay/rust-toolchain@ce678459e9fc7500d337468f904b95f1b5c10b5e # 1.98.1
-        with:
-          targets: aarch64-apple-darwin
-      - name: Build release
-        run: cargo build --release -p ${{ env.LIB_NAME }} --target=aarch64-apple-darwin
-      - uses: actions/upload-artifact@v7
-        with:
-          name: oicana-csharp-macos-arm
-          path: target/aarch64-apple-darwin/release/lib${{ env.LIB_NAME }}.dylib
+          name: oicana-csharp-${{ matrix.rid }}
+          path: dist/${{ matrix.lib }}
+          if-no-files-found: error
   check-glibc:
     name: Assert the glibc floor of the Linux libraries
     runs-on: ubuntu-24.04
-    needs: [build-linux-x64, build-linux-arm64]
+    needs: build
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -170,49 +145,47 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    needs: [validate-version, build-linux-x64, build-linux-arm64, build-windows, build-mac-x86, build-mac-arm, check-glibc]
+    needs: [validate-version, build, check-glibc]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
       - uses: actions/download-artifact@v8
         with:
-          name: oicana-csharp-linux-x64
-          path: integrations/csharp/Oicana/runtimes/linux-x64/native
-      - uses: actions/download-artifact@v8
-        with:
-          name: oicana-csharp-linux-arm64
-          path: integrations/csharp/Oicana/runtimes/linux-arm64/native
-      - uses: actions/download-artifact@v8
-        with:
-          name: oicana-csharp-windows
-          path: integrations/csharp/Oicana/runtimes/win-x64/native
-      - uses: actions/download-artifact@v8
-        with:
-          name: oicana-csharp-macos-x86
-          path: integrations/csharp/Oicana/runtimes/osx-x64/native
-      - uses: actions/download-artifact@v8
-        with:
-          name: oicana-csharp-macos-arm
-          path: integrations/csharp/Oicana/runtimes/osx-arm64/native
+          pattern: oicana-csharp-*
+          path: natives
       - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '8'
-      - name: Build release
-        run: dotnet build integrations/csharp/Oicana --configuration Release
-      - name: Pack release
-        run: dotnet pack integrations/csharp/Oicana
+      - name: Pack Oicana.Core, Oicana.Native.<rid> and Oicana
+        run: |
+          dotnet pack integrations/csharp/Oicana.Core --configuration Release --output nupkgs
+          for dir in natives/oicana-csharp-*; do
+            rid="${dir#natives/oicana-csharp-}"
+            mkdir -p "integrations/csharp/Oicana.Native/runtimes/$rid/native"
+            cp "$dir"/* "integrations/csharp/Oicana.Native/runtimes/$rid/native/"
+            dotnet pack integrations/csharp/Oicana.Native --configuration Release --output nupkgs -p:Rid="$rid"
+          done
+          dotnet pack integrations/csharp/Oicana --configuration Release --output nupkgs \
+            -p:RestoreAdditionalProjectSources="$PWD/nupkgs"
+      - name: Report package sizes
+        run: |
+          echo "| Package | Size |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          for package in nupkgs/*.nupkg; do
+            echo "| $(basename "$package") | $(du -h "$package" | cut -f1) |" >> "$GITHUB_STEP_SUMMARY"
+          done
       - uses: actions/upload-artifact@v7
         with:
           name: oicana-csharp-nuget
-          path: integrations/csharp/Oicana/bin/Release/Oicana.*.nupkg
+          path: nupkgs/*.nupkg
       - name: NuGet login (OIDC → temp API key)
         uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1
         id: nuget-login
         with:
           user: ${{ secrets.NUGET_USER }}
-      - name: push package to nuget.org
+      - name: push packages to nuget.org
         run: |
-          dotnet nuget push integrations/csharp/Oicana/bin/Release/Oicana.*.nupkg \
+          dotnet nuget push "nupkgs/*.nupkg" \
             --source https://api.nuget.org/v3/index.json \
             --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }} \
             --skip-duplicate

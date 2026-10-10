@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <PackageId>Oicana.Native.$(Rid)</PackageId>
+        <Description>Native library of Oicana for $(Rid). The Oicana package references it; reference it directly next to Oicana.Core for a smaller install.</Description>
+        <PackageTags>pdf;typst;native</PackageTags>
+        <IncludeBuildOutput>false</IncludeBuildOutput>
+        <NoWarn>$(NoWarn);NU5128</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <NativeLibrary Include="runtimes/$(Rid)/native/*" />
+        <None Include="@(NativeLibrary)" Pack="true" PackagePath="runtimes/$(Rid)/native/" />
+        <None Include="../../../LICENSE.md" Pack="true" PackagePath="\" />
+    </ItemGroup>
+
+    <Target Name="RequireNativeLibrary" BeforeTargets="Build;Pack">
+        <Error Condition="'$(Rid)' == ''" Text="Pass the runtime identifier, for example -p:Rid=linux-x64." />
+        <Error Condition="'@(NativeLibrary)' == ''" Text="No native library in runtimes/$(Rid)/native/." />
+    </Target>
+
+</Project>

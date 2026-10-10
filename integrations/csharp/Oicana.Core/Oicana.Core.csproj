@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <Description>Managed part of Oicana, without native libraries. Either reference the Oicana package instead or reference Oicana.Core together with the Oicana.Native.&lt;rid&gt; packages you deploy to for a smaller install.</Description>
+        <PackageTags>pdf;pdf-generation;typst;template;invoice;report;document;typesetting</PackageTags>
+        <PackageReadmeFile>Readme.md</PackageReadmeFile>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <None Include="../Oicana/Readme.md" Pack="true" PackagePath="\" />
+      <None Include="../../../LICENSE.md" Pack="true" PackagePath="\" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(Configuration)' == 'Debug'">
+        <Content Condition="$([MSBuild]::IsOSPlatform('Linux'))" Include="$(MSBuildProjectDirectory)/../../../target/release/liboicana_csharp.so">
+            <Link>%(Filename)%(Extension)</Link>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Condition="$([MSBuild]::IsOSPlatform('Windows'))" Include="$(MSBuildProjectDirectory)/../../../target/release/oicana_csharp.dll">
+            <Link>%(Filename)%(Extension)</Link>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Condition="$([MSBuild]::IsOSPlatform('OSX'))" Include="$(MSBuildProjectDirectory)/../../../target/release/liboicana_csharp.dylib">
+            <Link>%(Filename)%(Extension)</Link>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.1" />
+    </ItemGroup>
+
+</Project>

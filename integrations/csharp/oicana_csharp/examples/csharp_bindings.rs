@@ -4,7 +4,7 @@ use interoptopus::util::NamespaceMappings;
 use interoptopus::{Error, Interop};
 use interoptopus_backend_csharp::CSharpVisibility;
 
-const OUTPUT_FILE: &str = "./integrations/csharp/Oicana/Interop/OicanaFfiInternal.cs";
+const OUTPUT_FILE: &str = "./integrations/csharp/Oicana.Core/Interop/OicanaFfiInternal.cs";
 
 fn main() -> Result<(), Error> {
     use interoptopus_backend_csharp::{Config, Generator};
