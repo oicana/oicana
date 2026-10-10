@@ -684,6 +684,11 @@ impl DocumentHandle {
             ExportFormat::Svg => export_svg(&cached.document, pages.as_ref())?,
         })
     }
+
+    /// Sizes of every page of the document, in document order.
+    pub fn pages(&self) -> Vec<PageSize> {
+        page_sizes(&self.cached.document)
+    }
 }
 
 /// Size of a single document page, in typographic points (pt).
@@ -705,8 +710,12 @@ pub fn document_pages(document_id: &str) -> Result<String, FfiError> {
         return Err(FfiError::DocumentNotFound(document_id.to_owned()));
     };
 
-    let pages: Vec<PageSize> = cached
-        .document
+    serde_json::to_string(&page_sizes(&cached.document))
+        .map_err(|error| FfiError::PageSizesSerialization(error.to_string()))
+}
+
+fn page_sizes(document: &PagedDocument) -> Vec<PageSize> {
+    document
         .pages()
         .iter()
         .map(|page| {
@@ -716,10 +725,7 @@ pub fn document_pages(document_id: &str) -> Result<String, FfiError> {
                 height: size.y.to_pt(),
             }
         })
-        .collect();
-
-    serde_json::to_string(&pages)
-        .map_err(|error| FfiError::PageSizesSerialization(error.to_string()))
+        .collect()
 }
 
 /// Return the template's manifest serialized as a JSON string.
