@@ -1,7 +1,7 @@
 import init, {
   configure_diagnostic_color,
   registered_fonts,
-} from '@oicana/browser-wasm';
+} from '../wasm/oicana_browser_wasm.js';
 
 export {
   clear_fonts as clearFonts,
@@ -9,7 +9,7 @@ export {
   evict_cache as evictCache,
   register_fonts as registerFonts,
   set_log_level as setLogLevel,
-} from '@oicana/browser-wasm';
+} from '../wasm/oicana_browser_wasm.js';
 export * from './BlobInput.js';
 export * from './CompilationMode.js';
 export * from './CompiledDocument.js';
@@ -48,13 +48,14 @@ export function registeredFonts(): RegisteredFont[] {
   return registered_fonts() as RegisteredFont[];
 }
 
-const initializing: Map<string, Promise<void>> = new Map();
+const initializing: Map<string | undefined, Promise<void>> = new Map();
 
 /**
  * Initializes the WASM module from the given URL
- * @param wasmPath URL from which to load the WASM module
+ * @param wasmPath URL from which to load the WASM module. Defaults to the WASM
+ * file shipped in this package.
  */
-export function initialize(wasmPath: string): Promise<void> {
+export function initialize(wasmPath?: string): Promise<void> {
   let pending = initializing.get(wasmPath);
   if (pending === undefined) {
     pending = init({ module_or_path: wasmPath }).then(() => undefined);

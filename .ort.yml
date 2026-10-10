@@ -5,9 +5,6 @@ excludes:
     - pattern: "integrations/node/oicana-node-native/npm/**"
       reason: DATA_FILE_OF
       comment: "Generated packages for different platforms"
-    - pattern: "integrations/browser/oicana_browser_wasm/pkg/package.json"
-      reason: DATA_FILE_OF
-      comment: "Generated package wrapping WASM"
     - pattern: "integrations/node/oicana-node/package.json"
       reason: DATA_FILE_OF
       comment: "Todo: ORT analysis is failing"

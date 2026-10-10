@@ -206,7 +206,7 @@ command = "npm"
 args = ["run", "lint"]
 
 [tasks.check-browser]
-description = "Type-check the browser wrapper (tsc build)."
+description = "Type-check the browser wrapper (tsc build). Needs the WASM from `npm run build:wasm`."
 cwd = "integrations/browser/oicana-browser"
 command = "npm"
 args = ["run", "build"]
@@ -342,13 +342,10 @@ npm install --no-audit --no-fund
 '''
 
 [tasks.install-browser-deps]
-description = "npm install for the browser wrapper (skips the unpublished @oicana/browser-wasm peer)."
+description = "npm install for the browser wrapper."
 cwd = "integrations/browser/oicana-browser"
-script_runner = "@shell"
-script = '''
-npm pkg delete dependencies['@oicana/browser-wasm']
-npm install --no-audit --no-fund
-'''
+command = "npm"
+args = ["install", "--no-audit", "--no-fund"]
 
 [tasks.install-python-deps]
 description = "uv sync for the python workspace."

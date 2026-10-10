@@ -10,7 +10,7 @@ import {
   remove_world,
   set_validate_inputs,
   manifest as wasmManifest,
-} from '@oicana/browser-wasm';
+} from '../wasm/oicana_browser_wasm.js';
 import type { BlobInput } from './BlobInput.js';
 import { CompilationMode } from './CompilationMode.js';
 import { CompiledDocument } from './CompiledDocument.js';

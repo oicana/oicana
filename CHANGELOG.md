@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Browser
+- `@oicana/browser` now bundles the WASM module, so `@oicana/browser-wasm` is no longer needed
+  - Uninstall `@oicana/browser-wasm` and import the module URL from `@oicana/browser/oicana.wasm` instead
+- `initialize()` takes the WASM URL as an optional argument and defaults to the module shipped in the package
+  - Bundlers that resolve `new URL(..., import.meta.url)` don't need the WASM import anymore
+  - If using Vite and the import is dropped, add `@oicana/browser` to `optimizeDeps.exclude` for the dev server
+
 ## v0.9.0
 
 - registering fonts by path accepts a directory and adds every font file in its tree, like the CLI's `--font-path` already did

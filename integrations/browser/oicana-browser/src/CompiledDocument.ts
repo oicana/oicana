@@ -3,7 +3,7 @@ import {
   export_document,
   get_warnings,
   remove_document,
-} from '@oicana/browser-wasm';
+} from '../wasm/oicana_browser_wasm.js';
 import { type ExportFormat, Pdf, Png, Svg } from './ExportFormat.js';
 import type { PageRange } from './PageRange.js';
 

@@ -6,7 +6,7 @@
 3. Integrations
   * bump browser
     * wasm in integrations/browser/oicana_browser_wasm/Cargo.toml
-    * wrapper and wasm dep in integrations/browser/oicana-browser/package.json
+    * package in integrations/browser/oicana-browser/package.json
   * bump C# integration in integrations/csharp/Oicana/Oicana.csproj and integrations/csharp/oicana_csharp/Cargo.toml
   * bump Node.Js integration versions 
     * in integrations/node/oicana-node-native/Cargo.toml and integrations/node/oicana-node-native/package.json
@@ -61,15 +61,12 @@ The pipeline pushes the new version to nuget.
 
 ## WASM
 
-The WASM integration is published in two packages, both from `.github/workflows/publish-integration-browser.yml`.
-The workflow runs on a tag `oicana_browser-v0.0.0-rc.1` or manual trigger, and publishes `@oicana/browser-wasm` first,
-then `@oicana/browser`.
+The WASM integration is published as `@oicana/browser` from `.github/workflows/publish-integration-browser.yml`.
+The package bundles the WASM build of `oicana_browser_wasm`.
+The workflow runs on a tag `oicana_browser-v0.0.0-rc.1` or manual trigger.
 
-1. `oicana_browser_wasm`
-  - Bump version in `integrations/browser/oicana_browser_wasm/Cargo.toml`
-2. `oicana-browser`
-  - Bump `@oicana/browser-wasm` dependency
-  - Bump version
+1. Bump version in `integrations/browser/oicana_browser_wasm/Cargo.toml`
+2. Bump version in `integrations/browser/oicana-browser/package.json`
   - Run `npm i` to update lock file
 
 ### Pipeline authentication
