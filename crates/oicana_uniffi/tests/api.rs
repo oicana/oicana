@@ -22,6 +22,12 @@ const PAYLOAD_TEMPLATE: &str = r#"#set document(date: none)
 } else [No payload]
 "#;
 
+const INPUTS_TEMPLATE: &str = r#"#set document(date: none)
+#let inputs = sys.inputs.at("oicana-inputs", default: (:))
+#if "data" in inputs [#repr(json(bytes(inputs.data)))]
+#if "payload" in inputs [#str(inputs.payload.bytes): #repr(inputs.payload.meta)]
+"#;
+
 fn template_zip(inputs: &str, main_typst: &str) -> Vec<u8> {
     let manifest = format!(
         "[package]\nname = \"uniffi-test\"\nversion = \"0.1.0\"\nentrypoint = \"main.typ\"\n\n\
@@ -103,9 +109,13 @@ fn compiles_and_exports_every_format() {
 
 #[test]
 fn matches_oicana_ffi_core_output() {
-    let files = repo_file("e2e-tests/template/oicana-e2e-test-x.y.z.zip");
+    let files = template_zip(
+        "\n[[tool.oicana.inputs]]\ntype = \"json\"\nkey = \"data\"\n\
+         \n[[tool.oicana.inputs]]\ntype = \"blob\"\nkey = \"payload\"\n",
+        INPUTS_TEMPLATE,
+    );
     let json = HashMap::from([(
-        "development-json".to_owned(),
+        "data".to_owned(),
         String::from_utf8(repo_file("assets/inputs/input.json")).unwrap(),
     )]);
     let meta = r#"{"image_format":"jpeg","foo":43,"bar":["input","two"]}"#;
@@ -115,7 +125,7 @@ fn matches_oicana_ffi_core_output() {
         &files,
         json.clone(),
         HashMap::from([(
-            "development-blob".to_owned(),
+            "payload".to_owned(),
             oicana_ffi_core::BlobWithMetadata {
                 bytes: blob.clone(),
                 meta: meta.to_owned(),
@@ -129,7 +139,7 @@ fn matches_oicana_ffi_core_output() {
     .unwrap();
 
     let blobs = HashMap::from([(
-        "development-blob".to_owned(),
+        "payload".to_owned(),
         BlobInput {
             data: blob,
             metadata: meta.to_owned(),
