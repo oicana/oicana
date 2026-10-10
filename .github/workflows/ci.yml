@@ -292,10 +292,28 @@ jobs:
           - os: ubuntu-latest
             container: quay.io/pypa/manylinux_2_28_x86_64:2026.09.14-1
             lib: liboicana_csharp.so
+            artifact: linux-x64
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            zig: true
+            lib: liboicana_csharp.so
+            artifact: linux-musl-x64
+          # Temporary: only built in the publish workflow otherwise; remove before merging
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+            zig: true
+            lib: liboicana_csharp.so
+            artifact: linux-musl-arm64
           - os: macos-latest
             lib: liboicana_csharp.dylib
+            artifact: osx-arm64
           - os: windows-latest
             lib: oicana_csharp.dll
+            artifact: win-x64
+          - os: windows-latest
+            target: aarch64-pc-windows-msvc
+            lib: oicana_csharp.dll
+            artifact: win-arm64
     runs-on: ${{ matrix.os }}
     container: ${{ matrix.container }}
     defaults:
@@ -305,7 +323,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: actions/cache@v5
         with:
-          key: ${{ runner.os }}-${{ matrix.container }}-cargo-${{ hashFiles('**/Cargo.toml') }}
+          key: ${{ runner.os }}-csharp-${{ matrix.artifact }}-cargo-${{ hashFiles('**/Cargo.toml') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
           path: |
@@ -315,16 +333,31 @@ jobs:
             ~/.cargo/git/db/
             target/
       - uses: dtolnay/rust-toolchain@1.98.1
+        with:
+          targets: ${{ matrix.target }}
+      - uses: mlugg/setup-zig@v2
+        if: matrix.zig
+        with:
+          version: 0.14.1
+      - uses: taiki-e/install-action@v2
+        if: matrix.zig
+        with:
+          tool: cargo-zigbuild
       - name: build oicana_csharp
-        run: cargo build --release -p oicana_csharp
+        run: |
+          if [[ -n "${{ matrix.zig }}" ]]; then
+            RUSTFLAGS="-C target-feature=-crt-static" cargo zigbuild --release -p oicana_csharp --target ${{ matrix.target }}
+          else
+            cargo build --release -p oicana_csharp ${{ matrix.target && format('--target {0}', matrix.target) || '' }}
+          fi
       - name: Assert glibc floor
         if: matrix.container != ''
         run: ./.github/scripts/assert-glibc-floor.sh 2.28 ./target/release/${{ matrix.lib }}
       - name: Upload liboicana_csharp
         uses: actions/upload-artifact@v7
         with:
-          name: liboicana_csharp_${{ runner.os }}
-          path: ./target/release/${{ matrix.lib }}
+          name: liboicana_csharp_${{ matrix.artifact }}
+          path: ./target/${{ matrix.target }}/release/${{ matrix.lib }}
           if-no-files-found: error
 
   build-browser-wasm:
@@ -664,9 +697,16 @@ jobs:
         run: test-compare e2e-tests/template integrations/browser/oicana-browser/testOutput/
 
   e2e-test-csharp-integration:
+    name: C# E2E (${{ matrix.artifact }})
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - { os: ubuntu-latest, artifact: linux-x64 }
+          - { os: ubuntu-latest, artifact: linux-musl-x64, alpine: true }
+          - { os: macos-latest, artifact: osx-arm64 }
+          - { os: windows-latest, artifact: win-x64 }
+          - { os: windows-11-arm, artifact: win-arm64 }
     runs-on: ${{ matrix.os }}
     needs:
       - build-tools
@@ -677,6 +717,8 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 8.0.x
+      - uses: dtolnay/rust-toolchain@1.98.1
+        if: runner.os == 'Windows' && runner.arch == 'ARM64'
       - uses: taiki-e/install-action@v2
         with:
           tool: typship
@@ -699,11 +741,15 @@ jobs:
       - name: install csharp lib
         uses: actions/download-artifact@v8
         with:
-          name: liboicana_csharp_${{ runner.os }}
+          name: liboicana_csharp_${{ matrix.artifact }}
           path: ./target/release/
       - name: test csharp integration
+        if: '!matrix.alpine'
         run: dotnet test
         working-directory: ./integrations/csharp
+      - name: test csharp integration in Alpine (musl)
+        if: matrix.alpine
+        run: docker run --rm -v "$PWD:/io" -w /io/integrations/csharp mcr.microsoft.com/dotnet/sdk:8.0-alpine dotnet test
       - name: compare test output
         run: test-compare e2e-tests/template integrations/csharp/Oicana.Test/bin/Debug/net8.0/e2e/
 

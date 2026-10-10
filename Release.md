@@ -7,7 +7,7 @@
   * bump browser
     * wasm in integrations/browser/oicana_browser_wasm/Cargo.toml
     * package in integrations/browser/oicana-browser/package.json
-  * bump C# integration in integrations/csharp/Oicana/Oicana.csproj and integrations/csharp/oicana_csharp/Cargo.toml
+  * bump C# integration in integrations/csharp/Directory.Build.props and integrations/csharp/oicana_csharp/Cargo.toml
   * bump Node.Js integration versions 
     * in integrations/node/oicana-node-native/Cargo.toml and integrations/node/oicana-node-native/package.json
       * run `yarn build` and `yarn format`

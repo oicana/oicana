@@ -2,7 +2,7 @@
 
 > **This is an internal build artifact of [Oicana](https://oicana.com).** Install the [`Oicana`](https://www.nuget.org/packages/Oicana) NuGet package instead. It ships this native library and wraps it in the documented API.
 
-FFI bindings consumed by the C# wrapper package in [`../Oicana`](https://github.com/oicana/oicana/tree/main/integrations/csharp/Oicana). The exported functions take and return raw handles, with no stability guarantees between releases.
+FFI bindings consumed by the C# wrapper package in [`../Oicana.Core`](https://github.com/oicana/oicana/tree/main/integrations/csharp/Oicana.Core). The exported functions take and return raw handles, with no stability guarantees between releases.
 
 ## Development
 

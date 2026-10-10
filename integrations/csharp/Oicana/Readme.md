@@ -14,7 +14,14 @@ Oicana compiles PDFs in process through native bindings instead. You design docu
 dotnet add package Oicana
 ```
 
-Targets .NET 8.0 and newer. The native library ships in the package for `linux-x64`, `win-x64`, `osx-x64`, and `osx-arm64`.
+Targets .NET 8.0 and newer. The package brings the native library for `linux-x64`, `linux-arm64`, `linux-musl-x64`, `linux-musl-arm64` (Alpine), `osx-x64`, `osx-arm64`, `win-x64`, and `win-arm64`. The glibc builds need glibc 2.28 or newer.
+
+For smaller deployments, for example container images, reference `Oicana.Core` and only the native packages you deploy to instead:
+
+```bash
+dotnet add package Oicana.Core
+dotnet add package Oicana.Native.linux-musl-x64
+```
 
 ## Quick start
 
