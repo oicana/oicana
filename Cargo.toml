@@ -7,6 +7,7 @@ members = [
     "crates/oicana_testing",
     "crates/oicana_export",
     "crates/oicana_ffi_core",
+    "crates/oicana_uniffi",
     "integrations/browser/oicana_browser_wasm",
     "integrations/csharp/oicana_csharp",
     "integrations/rust/oicana",
@@ -16,6 +17,7 @@ members = [
     "integrations/java/oicana-java-native",
     "tools/test_compare",
     "tools/oicana_cli",
+    "tools/uniffi-bindgen",
 ]
 
 default-members = [
@@ -26,6 +28,7 @@ default-members = [
     "crates/oicana_testing",
     "crates/oicana_export",
     "crates/oicana_ffi_core",
+    "crates/oicana_uniffi",
     "integrations/browser/oicana_browser_wasm",
     "integrations/csharp/oicana_csharp",
     "integrations/rust/oicana",
@@ -101,6 +104,8 @@ serde_json = "1.0.115"
 rayon = "1.10.0"
 thiserror = "2.0"
 getrandom = { version = "0.3", default-features = false }
+# Bump the minor version together with the generators and regenerate all bindings
+uniffi = "0.31.2"
 clap = { version = "4.5.16" }
 clap-verbosity = { version = "2.1.0" }
 unicode-ident = "1.0.12"
@@ -142,3 +147,7 @@ strip = true
 
 [profile.release.package."oicana_node_native"]
 strip = "symbols"
+
+# Keep the symbol table so uniffi-bindgen can read the binding metadata; strip before packaging
+[profile.release.package."oicana_uniffi"]
+strip = "debuginfo"
