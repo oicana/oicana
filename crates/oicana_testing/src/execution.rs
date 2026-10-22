@@ -126,7 +126,7 @@ impl TestRunner {
                         )));
                     }
                 };
-                let schema = match serde_json::from_reader(schema_file) {
+                let schema: serde_json::Value = match serde_json::from_reader(schema_file) {
                     Ok(schema) => schema,
                     Err(error) => {
                         return Err(TestExecutionError::FuzzingSetup(format!(
@@ -135,6 +135,14 @@ impl TestRunner {
                         )));
                     }
                 };
+                if let Some(uri) = schema.get("$schema").and_then(serde_json::Value::as_str) {
+                    if !uri.contains("/draft/2020-12/") {
+                        return Err(TestExecutionError::FuzzingSetup(format!(
+                            "Fuzzing requires JSON Schema 2020-12, but the schema '{schema_path}' \
+                             declares '{uri}'."
+                        )));
+                    }
+                }
                 match SchemaDocument::from_json(&schema) {
                     Ok(schema) => schema,
                     Err(error) => {
@@ -211,33 +219,33 @@ impl TestRunner {
                     warnings.push(format!(
                         "Writing snapshot file at {path:?}, because it was missing"
                     ));
+                    if let Some(parent) = path.parent() {
+                        fs::create_dir_all(parent)?;
+                    }
                     fs::write(path, optimize_png(&image)?)?;
+                    remove_comparison(path)?;
                 }
                 SnapshotMode::Compare => {
                     return Err(TestExecutionError::SnapshotMissing(path.clone()))
                 }
             },
             Snapshot::Some(path, mode) => {
-                if !compare_images(path, &image, 1)? {
-                    let mut compare_path = path.clone();
-                    if let Some(stem) = compare_path.file_stem() {
-                        let mut new_name = stem.to_os_string();
-                        match mode {
-                            SnapshotMode::Compare => {
-                                new_name.push(".compare.png");
+                if compare_images(path, &image, 1)? {
+                    remove_comparison(path)?;
+                } else {
+                    match mode {
+                        SnapshotMode::Compare => {
+                            match comparison_path(path) {
+                                Some(comparison) => fs::write(comparison, optimize_png(&image)?)?,
+                                None => error!("Snapshot file had no file stem!"),
                             }
-                            SnapshotMode::Update => {
-                                new_name.push(".png");
-                                warnings.push(format!("Overwriting snapshot file at '{path:?}'."));
-                            }
+                            return Err(TestExecutionError::SnapshotMismatch(path.clone()));
                         }
-                        compare_path.set_file_name(new_name);
-                        fs::write(compare_path, optimize_png(&image)?)?;
-                    } else {
-                        error!("Snapshot file had no file stem!");
-                    }
-                    if matches!(mode, SnapshotMode::Compare) {
-                        return Err(TestExecutionError::SnapshotMismatch(path.clone()));
+                        SnapshotMode::Update => {
+                            warnings.push(format!("Overwriting snapshot file at '{path:?}'."));
+                            fs::write(path, optimize_png(&image)?)?;
+                            remove_comparison(path)?;
+                        }
                     }
                 }
             }
@@ -245,6 +253,24 @@ impl TestRunner {
         }
 
         Ok(warnings)
+    }
+}
+
+/// The file a mismatching snapshot is written to.
+pub fn comparison_path(snapshot: &Path) -> Option<PathBuf> {
+    let mut name = snapshot.file_stem()?.to_os_string();
+    name.push(".compare.png");
+    Some(snapshot.with_file_name(name))
+}
+
+/// Remove a comparison image left over from an earlier mismatch.
+fn remove_comparison(snapshot: &Path) -> io::Result<()> {
+    let Some(comparison) = comparison_path(snapshot) else {
+        return Ok(());
+    };
+    match fs::remove_file(comparison) {
+        Err(error) if error.kind() != io::ErrorKind::NotFound => Err(error),
+        _ => Ok(()),
     }
 }
 
@@ -286,7 +312,7 @@ pub fn compare_images(path: &Path, data: &[u8], tolerance: u8) -> Result<bool, I
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Snapshot, Test};
+    use crate::{Snapshot, SnapshotMode, Test};
     use std::fs;
     use tempfile::{tempdir, TempDir};
 
@@ -358,6 +384,132 @@ mod tests {
         let dir = ua_1_template("Hello");
 
         run_template(&dir, false).expect("Test should pass when the PDF export is disabled");
+    }
+
+    fn run_snapshot(
+        dir: &TempDir,
+        body: &str,
+        snapshot: Snapshot,
+    ) -> Result<Vec<String>, TestExecutionError> {
+        fs::write(dir.path().join("main.typ"), body).unwrap();
+        let manifest_content = fs::read_to_string(dir.path().join("typst.toml")).unwrap();
+        let manifest = TemplateManifest::from_toml(&manifest_content).unwrap();
+        let mut runner = TestRunnerContext::new()
+            .unwrap()
+            .get_runner(dir.path(), &manifest)
+            .unwrap();
+
+        runner.run(Test {
+            inputs: TemplateInputs::new(),
+            fuzzed_inputs: None,
+            name: "snapshot".to_owned(),
+            snapshot,
+            pdf: false,
+            collection: dir.path().to_path_buf(),
+            descriptor: "snapshot".to_owned(),
+        })
+    }
+
+    #[test]
+    fn removes_the_comparison_image_once_the_snapshot_matches() {
+        let dir = ua_1_template("");
+        let snapshot = dir.path().join("snapshots/nested/test.png");
+        let comparison = dir.path().join("snapshots/nested/test.compare.png");
+
+        run_snapshot(
+            &dir,
+            "A",
+            Snapshot::Missing(snapshot.clone(), SnapshotMode::Update),
+        )
+        .unwrap();
+        assert!(snapshot.exists());
+
+        let error = run_snapshot(
+            &dir,
+            "B",
+            Snapshot::Some(snapshot.clone(), SnapshotMode::Compare),
+        )
+        .unwrap_err();
+        assert!(
+            matches!(error, TestExecutionError::SnapshotMismatch(_)),
+            "{error}"
+        );
+        assert!(comparison.exists());
+
+        run_snapshot(
+            &dir,
+            "B",
+            Snapshot::Some(snapshot.clone(), SnapshotMode::Update),
+        )
+        .unwrap();
+        assert!(!comparison.exists());
+
+        run_snapshot(
+            &dir,
+            "A",
+            Snapshot::Some(snapshot.clone(), SnapshotMode::Compare),
+        )
+        .unwrap_err();
+        assert!(comparison.exists());
+        run_snapshot(&dir, "B", Snapshot::Some(snapshot, SnapshotMode::Compare)).unwrap();
+        assert!(!comparison.exists());
+    }
+
+    #[test]
+    fn fuzzing_rejects_schemas_other_than_2020_12() {
+        let dir = tempdir().unwrap();
+        fs::write(
+            dir.path().join("typst.toml"),
+            r#"
+            [package]
+            name = "fuzzed"
+            version = "0.1.0"
+            entrypoint = "main.typ"
+
+            [tool.oicana]
+            manifest_version = 1
+
+            [[tool.oicana.inputs]]
+            type = "json"
+            key = "data"
+            schema = "data.schema.json"
+            "#,
+        )
+        .unwrap();
+        fs::write(
+            dir.path().join("data.schema.json"),
+            r#"{"$schema": "http://json-schema.org/draft-07/schema#", "type": "boolean"}"#,
+        )
+        .unwrap();
+        fs::write(dir.path().join("main.typ"), "Hello").unwrap();
+        let manifest_content = fs::read_to_string(dir.path().join("typst.toml")).unwrap();
+        let manifest = TemplateManifest::from_toml(&manifest_content).unwrap();
+        let mut runner = TestRunnerContext::new()
+            .unwrap()
+            .get_runner(dir.path(), &manifest)
+            .unwrap();
+
+        let error = runner
+            .run(Test {
+                inputs: TemplateInputs::new(),
+                fuzzed_inputs: Some(crate::FuzzJson {
+                    samples: 1,
+                    key: "data".to_owned(),
+                }),
+                name: "fuzzed".to_owned(),
+                snapshot: Snapshot::None,
+                pdf: false,
+                collection: dir.path().to_path_buf(),
+                descriptor: "fuzzed".to_owned(),
+            })
+            .unwrap_err();
+
+        let message = error.to_string();
+        assert!(
+            message.contains("Fuzzing requires JSON Schema 2020-12")
+                && message.contains("'http://json-schema.org/draft-07/schema#'"),
+            "{message}"
+        );
     }
 
     #[test]

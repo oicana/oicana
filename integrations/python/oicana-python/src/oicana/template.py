@@ -85,6 +85,19 @@ def _serialize_export_format(export: ExportFormat) -> str:
     return json.dumps(export)
 
 
+def _native_mode(mode: CompilationMode) -> NativeCompilationMode:
+    """Map a compilation mode to the native enum.
+
+    Raises:
+        TypeError: If ``mode`` is not a :class:`CompilationMode`.
+    """
+    if mode is CompilationMode.PRODUCTION:
+        return NativeCompilationMode.Production
+    if mode is CompilationMode.DEVELOPMENT:
+        return NativeCompilationMode.Development
+    raise TypeError(f"mode must be a CompilationMode, got {mode!r}")
+
+
 def _parse_diagnostics(diagnostics: str) -> list[Diagnostic]:
     return [Diagnostic.from_json(diagnostic) for diagnostic in json.loads(diagnostics)]
 
@@ -135,11 +148,7 @@ class Template:
         """
         self._template_id = str(uuid.uuid4())
 
-        native_mode = (
-            NativeCompilationMode.Production
-            if mode == CompilationMode.PRODUCTION
-            else NativeCompilationMode.Development
-        )
+        native_mode = _native_mode(mode)
 
         native_json = json_inputs if json_inputs is not None else {}
 
@@ -308,11 +317,7 @@ class Template:
         Returns:
             The exported document and any compilation warnings.
         """
-        native_mode = (
-            NativeCompilationMode.Production
-            if mode == CompilationMode.PRODUCTION
-            else NativeCompilationMode.Development
-        )
+        native_mode = _native_mode(mode)
 
         native_json = json_inputs if json_inputs is not None else {}
 
@@ -364,11 +369,7 @@ class Template:
         blob_inputs: dict[str, BlobInput] | None,
         mode: CompilationMode,
     ) -> str:
-        native_mode = (
-            NativeCompilationMode.Production
-            if mode == CompilationMode.PRODUCTION
-            else NativeCompilationMode.Development
-        )
+        native_mode = _native_mode(mode)
 
         native_json = json_inputs if json_inputs is not None else {}
 

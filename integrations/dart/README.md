@@ -25,7 +25,7 @@ Requires Dart 3.11 or Flutter 3.41 or newer. The package works in Flutter apps a
 
 When you build or run an app for a native target, a build hook downloads the native Oicana library for exactly that target and bundles it. Web builds of Flutter apps bundle the WebAssembly build instead.
 
-> Deploy Dart programs, like servers, with `dart build cli`, which puts the native library next to the executable. `dart compile exe` does not bundle native libraries.
+> Deploy Dart programs, like servers, with `dart build cli`, which puts the native library next to the executable. `dart compile exe` does not support packages with build hooks like `oicana`.
 
 ## Quick start
 

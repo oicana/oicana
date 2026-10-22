@@ -86,3 +86,28 @@ def test_refuses_a_template_packed_by_a_newer_oicana() -> None:
 def test_oicana_errors_are_runtime_errors() -> None:
     """Callers catching RuntimeError keep catching Oicana failures."""
     assert issubclass(OicanaError, RuntimeError)
+
+
+INVALID_MODES = ["production", "development", None, 0, 1, "bogus"]
+
+
+@pytest.mark.parametrize("mode", INVALID_MODES)
+def test_registration_rejects_invalid_mode(mode: object) -> None:
+    with pytest.raises(TypeError, match="mode must be a CompilationMode"):
+        Template(pack_minimal_template("Content"), mode=mode)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("mode", INVALID_MODES)
+def test_export_rejects_invalid_mode(mode: object) -> None:
+    """Anything but the enum must not fall back to development mode."""
+    with Template(pack_minimal_template("Content")) as tmpl:
+        with pytest.raises(TypeError, match="mode must be a CompilationMode"):
+            tmpl.export_pdf(mode=mode)  # type: ignore[arg-type]
+        with pytest.raises(TypeError, match="mode must be a CompilationMode"):
+            tmpl.compile(mode=mode)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("mode", INVALID_MODES)
+def test_export_once_rejects_invalid_mode(mode: object) -> None:
+    with pytest.raises(TypeError, match="mode must be a CompilationMode"):
+        Template.export_once(pack_minimal_template("Content"), mode=mode)  # type: ignore[arg-type]

@@ -34,6 +34,17 @@ pub enum PackedTemplateError {
         /// The configured limit for the total decompressed size in bytes.
         limit: u64,
     },
+    /// An archive entry uses a compression method other than stored, deflate or zstd.
+    #[error(
+        "Template archive entry '{path}' uses the unsupported compression method {method}. \
+         Supported methods are stored, deflate and zstd; `oicana pack` creates compatible archives."
+    )]
+    UnsupportedCompression {
+        /// The path of the entry in the archive.
+        path: String,
+        /// The zip compression method id of the entry.
+        method: u16,
+    },
 }
 
 /// A zip limit was given as a negative number, which cannot express a bound.
@@ -185,6 +196,12 @@ impl PackedTemplate {
             let file_result = archive.by_name(path);
             let content = match file_result {
                 Ok(content) => content,
+                Err(zip::result::ZipError::CompressionMethodNotSupported(method)) => {
+                    return Err(PackedTemplateError::UnsupportedCompression {
+                        path: path.clone(),
+                        method,
+                    });
+                }
                 Err(error) => {
                     warn!("Failed to read zip path {path}: {error}");
                     continue;
@@ -549,13 +566,60 @@ mod tests {
     }
 
     fn zip_with_entries(entries: &[(&str, &[u8])]) -> Vec<u8> {
+        zip_with_compression(entries, CompressionMethod::Zstd)
+    }
+
+    fn zip_with_compression(entries: &[(&str, &[u8])], method: CompressionMethod) -> Vec<u8> {
         let mut writer = ZipWriter::new(Cursor::new(Vec::new()));
-        let options = SimpleFileOptions::default().compression_method(CompressionMethod::Zstd);
+        let options = SimpleFileOptions::default().compression_method(method);
         for (name, content) in entries {
             writer.start_file(*name, options).unwrap();
             writer.write_all(content).unwrap();
         }
         writer.finish().unwrap().into_inner()
+    }
+
+    #[test]
+    fn reads_deflate_archive() {
+        let archive = zip_with_compression(
+            &[("main.typ", b"Hello".as_slice())],
+            CompressionMethod::Deflated,
+        );
+
+        let files = PackedTemplate::new(Cursor::new(archive)).expect("Failed to read archive");
+
+        assert_eq!(
+            files.source(project_file("/main.typ")).unwrap().text(),
+            "Hello"
+        );
+    }
+
+    #[test]
+    fn rejects_unsupported_compression() {
+        let mut archive = zip_with_compression(
+            &[("main.typ", b"Hello".as_slice())],
+            CompressionMethod::Stored,
+        );
+        for (signature, method_offset) in [(*b"PK\x03\x04", 8), (*b"PK\x01\x02", 10)] {
+            let header = archive
+                .windows(4)
+                .position(|window| window == signature)
+                .unwrap();
+            archive[header + method_offset..header + method_offset + 2]
+                .copy_from_slice(&14u16.to_le_bytes());
+        }
+
+        let result = PackedTemplate::new(Cursor::new(archive));
+
+        assert!(
+            matches!(
+                result,
+                Err(PackedTemplateError::UnsupportedCompression { ref path, method: 14 })
+                    if path == "main.typ"
+            ),
+            "{:?}",
+            result.err()
+        );
     }
 
     #[test]

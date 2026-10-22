@@ -48,8 +48,8 @@ pub const COMPILATION_MODE_DEVELOPMENT: i64 = 1;
 
 fn compilation_mode_from_i64(mode: i64) -> oicana_ffi_core::CompilationMode {
     match mode {
-        0 => oicana_ffi_core::CompilationMode::Production,
-        _ => oicana_ffi_core::CompilationMode::Development,
+        1 => oicana_ffi_core::CompilationMode::Development,
+        _ => oicana_ffi_core::CompilationMode::Production,
     }
 }
 
