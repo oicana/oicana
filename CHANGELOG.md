@@ -13,6 +13,10 @@
 ### Python
 - Stricter handling of compilation modes: must be a `CompilationMode` variant
 
+## Typst package v0.2.1
+
+- better error handling
+
 ## v0.10.0
 
 - Improved error handling for JSON inputs that are not valid JSON
