@@ -356,6 +356,11 @@ jobs:
       - uses: dtolnay/rust-toolchain@1.98.1
         with:
           components: clippy, rustfmt
+      - name: Pin bindgen to one LLVM version
+        run: |
+          llvm=$(ls -d /usr/lib/llvm-* | sort -V | tail -n1)
+          echo "LIBCLANG_PATH=$llvm/lib" >> "$GITHUB_ENV"
+          echo "CLANG_PATH=$llvm/bin/clang" >> "$GITHUB_ENV"
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -1116,14 +1121,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { os: ubuntu-latest, python-version: '3.9', libc: gnu }
+          - { os: ubuntu-latest, runner: ubuntu-24.04, python-version: '3.9', libc: gnu }
           - { os: ubuntu-latest, python-version: '3.14', libc: gnu }
           - { os: macos-latest, python-version: '3.9', libc: gnu }
           - { os: macos-latest, python-version: '3.14', libc: gnu }
           - { os: windows-latest, python-version: '3.9', libc: gnu }
           - { os: windows-latest, python-version: '3.14', libc: gnu }
           - { os: ubuntu-latest, libc: musl }
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.runner || matrix.os }}
     needs:
       - build-tools
       - build-python-native
