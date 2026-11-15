@@ -717,10 +717,10 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - { os: ubuntu-latest, target: x86_64-unknown-linux-gnu, manylinux: auto, artifact: python_native_ubuntu-latest }
+          - { os: ubuntu-latest, target: x86_64-unknown-linux-gnu, manylinux: auto, artifact: python_native_Linux }
           - { os: ubuntu-latest, target: x86_64-unknown-linux-musl, manylinux: musllinux_1_2, artifact: python_native_musl }
-          - { os: macos-latest, target: aarch64-apple-darwin, manylinux: auto, artifact: python_native_macos-latest }
-          - { os: windows-latest, target: x86_64-pc-windows-msvc, manylinux: auto, artifact: python_native_windows-latest }
+          - { os: macos-latest, target: aarch64-apple-darwin, manylinux: auto, artifact: python_native_macOS }
+          - { os: windows-latest, target: x86_64-pc-windows-msvc, manylinux: auto, artifact: python_native_Windows }
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -1121,14 +1121,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { os: ubuntu-latest, runner: ubuntu-24.04, python-version: '3.9', libc: gnu }
+          - { os: ubuntu-24.04, python-version: '3.9', libc: gnu }
           - { os: ubuntu-latest, python-version: '3.14', libc: gnu }
           - { os: macos-latest, python-version: '3.9', libc: gnu }
           - { os: macos-latest, python-version: '3.14', libc: gnu }
           - { os: windows-latest, python-version: '3.9', libc: gnu }
           - { os: windows-latest, python-version: '3.14', libc: gnu }
           - { os: ubuntu-latest, libc: musl }
-    runs-on: ${{ matrix.runner || matrix.os }}
+    runs-on: ${{ matrix.os }}
     needs:
       - build-tools
       - build-python-native
@@ -1157,7 +1157,7 @@ jobs:
         if: matrix.libc == 'gnu'
         uses: actions/download-artifact@v8
         with:
-          name: python_native_${{ matrix.os }}
+          name: python_native_${{ runner.os }}
           path: ./dist
       - name: Install uv
         if: matrix.libc == 'gnu'
