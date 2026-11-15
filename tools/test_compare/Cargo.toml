@@ -32,5 +32,9 @@ clap = { workspace = true, features = ["derive", "string"] }
 # pin due to https://github.com/LaurenzV/hayro/pull/483
 read-fonts = "=0.35.0"
 
-[lints]
-workspace = true
+[lints.rust]
+missing_docs = "warn"
+
+[lints.cargo]
+unused_dependencies = "allow"
+missing_lints_inheritance = "allow"

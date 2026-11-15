@@ -3594,7 +3594,6 @@ version = "0.10.0"
 dependencies = [
  "oicana_ffi_core",
  "pyo3",
- "pyo3-build-config",
 ]
 
 [[package]]
@@ -3669,7 +3668,6 @@ dependencies = [
  "oicana_input",
  "oicana_template",
  "oicana_world",
- "once_cell",
  "serde",
  "serde_json",
  "thiserror 2.0.20",

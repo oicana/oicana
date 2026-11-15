@@ -17,10 +17,13 @@ pyo3::create_exception!(
 );
 
 /// Compilation mode enum
+// No `Copy`: clippy 1.100 flags the clone in the pyo3-generated extraction
 #[pyclass(eq, eq_int, from_py_object)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum CompilationMode {
+    /// Required inputs that are not provided fall back to default values or cause compilation to fail.
     Production,
+    /// Required inputs that are not provided fall back to development or default values before failing compilation.
     Development,
 }
 
@@ -36,10 +39,12 @@ impl From<CompilationMode> for oicana_ffi_core::CompilationMode {
 /// Blob input with metadata
 #[pyclass]
 pub struct BlobWithMetadata {
+    /// Blob content
     #[pyo3(get)]
     pub bytes: Py<PyBytes>,
+    /// Metadata as a JSON string
     #[pyo3(get)]
-    pub meta: String, // JSON string
+    pub meta: String,
 }
 
 #[pymethods]

@@ -14,6 +14,9 @@
 ### Python
 - Stricter handling of compilation modes: must be a `CompilationMode` variant
 
+### Rust
+- The minimum supported Rust version is 1.92
+
 ## v0.10.0
 
 - Improved error handling for JSON inputs that are not valid JSON

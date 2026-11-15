@@ -20,5 +20,5 @@ pyo3 = { version = "0.29.0", features = ["extension-module", "abi3-py39", "hashb
 
 oicana_ffi_core = { workspace = true }
 
-[build-dependencies]
-pyo3-build-config = "0.29"
+[lints]
+workspace = true

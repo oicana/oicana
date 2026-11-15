@@ -42,8 +42,7 @@ resolver = "2"
 
 [workspace.package]
 version = "0.10.0"
-# also change in ci.yml
-rust-version = "1.88"
+rust-version = "1.92"
 authors = ["Oicana <hello@oicana.com>"]
 edition = "2021"
 homepage = "https://oicana.com"
@@ -88,23 +87,18 @@ console_log = { version = "1.0.0" }
 js-sys = { version = "0.3" }
 dashmap = { version = "6.0.1", features = ["inline"] }
 anyhow = "1"
-once_cell = "1.19.0"
 zip = { version = "9.0.1", default-features = false, features = [
     "deflate-flate2",
     "zstd",
 ] }
 dirs = { version = "6.0.0" }
-flate2 = { version = "1" }
-native-tls = { version = "0.2" }
 codespan-reporting = { version = "0.13" }
 termcolor = { version = "1" }
-tar = { version = "0.4" }
 interoptopus = "0.14.5"
 interoptopus_backend_csharp = "0.14.5"
 serde_json = "1.0.115"
 rayon = "1.10.0"
 thiserror = "2.0"
-getrandom = { version = "0.3", default-features = false }
 # Bump the minor version together with the generators and regenerate all bindings
 uniffi = "0.31.2"
 clap = { version = "4.5.16" }

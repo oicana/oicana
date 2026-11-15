@@ -36,3 +36,6 @@ thiserror = { workspace = true, optional = true }
 [dev-dependencies]
 oicana_files = { workspace = true, features = ["preloaded"] }
 oicana_input = { workspace = true }
+
+[lints]
+workspace = true

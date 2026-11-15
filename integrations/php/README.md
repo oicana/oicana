@@ -33,7 +33,7 @@ Composer plugin that automatically downloads the appropriate native extension bi
 
 ### Prerequisites
 
-- Rust 1.88+
+- Rust 1.92+
 - PHP 8.3+ with development headers
 - Composer 2.0+
 
