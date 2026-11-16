@@ -17,3 +17,6 @@ crate-type = ["cdylib"]
 jni = "0.22"
 
 oicana_ffi_core = { workspace = true }
+
+[lints]
+workspace = true

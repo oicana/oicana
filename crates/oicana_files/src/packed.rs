@@ -1,5 +1,6 @@
 use crate::TemplateFiles;
 use log::warn;
+use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use std::io::{Read, Seek};
 use std::str::FromStr;
@@ -11,6 +12,7 @@ use typst::foundations::Bytes;
 use typst::syntax::package::{PackageSpec, PackageVersion};
 use typst::syntax::{FileId, RootedPath, Source, VirtualPath, VirtualRoot};
 use zip::read::ZipFile;
+use zip::result::ZipError;
 use zip::ZipArchive;
 
 /// An error that occurred while reading a packed template.
@@ -196,12 +198,6 @@ impl PackedTemplate {
             let file_result = archive.by_name(path);
             let content = match file_result {
                 Ok(content) => content,
-                Err(zip::result::ZipError::CompressionMethodNotSupported(method)) => {
-                    return Err(PackedTemplateError::UnsupportedCompression {
-                        path: path.clone(),
-                        method,
-                    });
-                }
                 Err(error) => {
                     warn!("Failed to read zip path {path}: {error}");
                     continue;
@@ -317,6 +313,19 @@ fn read_zip_file_content<R: Read + Seek>(
     let mut buffer = Vec::with_capacity(8192);
     let mut limited = content.take(remaining_bytes.saturating_add(1));
     if let Err(error) = limited.read_to_end(&mut buffer) {
+        if let Some(ZipError::CompressionMethodNotSupported(method)) =
+            error.get_ref().and_then(|inner| inner.downcast_ref())
+        {
+            let entry = limited.get_ref();
+            let path = entry.name().map_or_else(
+                |_| String::from_utf8_lossy(entry.name_raw()).into_owned(),
+                Cow::into_owned,
+            );
+            return Err(PackedTemplateError::UnsupportedCompression {
+                path,
+                method: *method,
+            });
+        }
         warn!(
             "Failed to read zip file content for {}: {error}",
             id.vpath().get_with_slash()

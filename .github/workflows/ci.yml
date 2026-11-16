@@ -356,6 +356,11 @@ jobs:
       - uses: dtolnay/rust-toolchain@1.98.1
         with:
           components: clippy, rustfmt
+      - name: Pin bindgen to one LLVM version
+        run: |
+          llvm=$(ls -d /usr/lib/llvm-* | sort -V | tail -n1)
+          echo "LIBCLANG_PATH=$llvm/lib" >> "$GITHUB_ENV"
+          echo "CLANG_PATH=$llvm/bin/clang" >> "$GITHUB_ENV"
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -540,7 +545,7 @@ jobs:
   build-tools:
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-24.04, macos-latest, windows-latest]
         tool_config:
           - tool: "oicana-cli"
             path: "tools/oicana_cli"
@@ -551,7 +556,7 @@ jobs:
         include:
           - os: windows-latest
             bin_ext: ".exe"
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             bin_ext: ""
           - os: macos-latest
             bin_ext: ""
@@ -712,10 +717,10 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - { os: ubuntu-latest, target: x86_64-unknown-linux-gnu, manylinux: auto, artifact: python_native_ubuntu-latest }
+          - { os: ubuntu-latest, target: x86_64-unknown-linux-gnu, manylinux: auto, artifact: python_native_Linux }
           - { os: ubuntu-latest, target: x86_64-unknown-linux-musl, manylinux: musllinux_1_2, artifact: python_native_musl }
-          - { os: macos-latest, target: aarch64-apple-darwin, manylinux: auto, artifact: python_native_macos-latest }
-          - { os: windows-latest, target: x86_64-pc-windows-msvc, manylinux: auto, artifact: python_native_windows-latest }
+          - { os: macos-latest, target: aarch64-apple-darwin, manylinux: auto, artifact: python_native_macOS }
+          - { os: windows-latest, target: x86_64-pc-windows-msvc, manylinux: auto, artifact: python_native_Windows }
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -1116,7 +1121,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { os: ubuntu-latest, python-version: '3.9', libc: gnu }
+          - { os: ubuntu-24.04, python-version: '3.9', libc: gnu }
           - { os: ubuntu-latest, python-version: '3.14', libc: gnu }
           - { os: macos-latest, python-version: '3.9', libc: gnu }
           - { os: macos-latest, python-version: '3.14', libc: gnu }
@@ -1152,7 +1157,7 @@ jobs:
         if: matrix.libc == 'gnu'
         uses: actions/download-artifact@v8
         with:
-          name: python_native_${{ matrix.os }}
+          name: python_native_${{ runner.os }}
           path: ./dist
       - name: Install uv
         if: matrix.libc == 'gnu'

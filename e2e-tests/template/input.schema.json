@@ -1,5 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oicana.com/input.schema.json",
   "title": "Test input",
   "description": "Schema for test inputs of the e2e test Oicana template",
   "type": "object",

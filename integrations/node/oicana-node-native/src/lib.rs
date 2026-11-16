@@ -446,16 +446,21 @@ pub fn remove_world(template_id: String) -> Result<()> {
   Ok(())
 }
 
+/// Compilation mode
 #[napi]
 pub enum CompilationMode {
+  /// Required inputs that are not provided fall back to default values or cause compilation to fail.
   Production,
+  /// Required inputs that are not provided fall back to development or default values before failing compilation.
   Development,
 }
 
 /// Color mode for compilation diagnostics.
 #[napi]
 pub enum DiagnosticColor {
+  /// Plain text
   None,
+  /// ANSI escape codes
   Ansi,
 }
 

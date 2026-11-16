@@ -14,7 +14,7 @@ Oicana is written in Rust, and this crate is the most direct way to use it. You 
 cargo add oicana
 ```
 
-Builds on stable Rust 1.88 or newer.
+Builds on stable Rust 1.92 or newer.
 
 ## Quick start
 

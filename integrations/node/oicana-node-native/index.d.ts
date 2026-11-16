@@ -15,8 +15,11 @@ export interface BlobWithMetadata {
  */
 export declare function clearFonts(): void
 
+/** Compilation mode */
 export declare const enum CompilationMode {
+  /** Required inputs that are not provided fall back to default values or cause compilation to fail. */
   Production = 0,
+  /** Required inputs that are not provided fall back to development or default values before failing compilation. */
   Development = 1,
 }
 
@@ -67,7 +70,9 @@ export declare function configureDiagnosticColor(color: DiagnosticColor): void
 
 /** Color mode for compilation diagnostics. */
 export declare const enum DiagnosticColor {
+  /** Plain text */
   None = 0,
+  /** ANSI escape codes */
   Ansi = 1,
 }
 
