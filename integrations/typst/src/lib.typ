@@ -24,7 +24,7 @@
 /// Method to simplify reading Oicana inputs in Typst projects.
 /// Pass a read function to `setup` to allow it to read project files:
 /// ```typst
-/// #import "@preview/oicana:0.2.0": setup
+/// #import "@preview/oicana:0.2.1": setup
 ///
 /// #let read-project-file(path) = return read(path, encoding: none);
 /// #let (input, oicana-image, oicana-config) = setup(read-project-file);

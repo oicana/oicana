@@ -94,7 +94,7 @@ development = "invoice.json"
 The entrypoint, `main.typ`, reads those inputs through the Oicana Typst package and lays out the document:
 
 ```typst
-#import "@preview/oicana:0.2.0": setup
+#import "@preview/oicana:0.2.1": setup
 
 #let read-project-file(path) = read(path, encoding: none)
 #let (input, oicana-image, oicana-config) = setup(read-project-file)

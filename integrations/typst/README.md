@@ -1,17 +1,17 @@
 # Oicana
 
-*Turn a Typst project into a document template your software application can render.*
+*Generate PDFs from your app's data in any programming language.*
 
-This package is the template-side half of [Oicana](https://oicana.com). It collects the inputs your application passes in and falls back to the `default` or `development` values from the manifest when they are missing, so one file serves both as a live preview in a Typst editor and as a production document rendered from Node.js, Python, Java, C#, Rust, PHP, or the browser.
+This package is the template-side half of [Oicana](https://oicana.com). Preview your template in any Typst editor and render it from Node.js, Python, Java, C#, Rust, PHP, Go, Ruby, Dart, or the browser. The package passes your application's inputs into the template and falls back to the `development` and `default` values from the manifest where inputs are missing. See [the Inputs documentation for details](https://oicana.com/docs/templates/inputs/).
 
-> This package is [MIT licensed](./LICENSE.md) and free to use. The Oicana integrations that render these templates from application code are source-available: free for noncommercial use, with commercial use free for 30 days. See [pricing](https://oicana.com/#pricing).
+> This package is [MIT licensed](./LICENSE.md). The Oicana integrations that render templates from application code have [their own license](#licensing).
 
 ## Setup
 
 Every template imports `setup` and destructures its return values:
 
 ```typst
-#import "@preview/oicana:0.2.0": setup
+#import "@preview/oicana:0.2.1": setup
 
 #let read-project-file(path) = read(path, encoding: none)
 #let (input, oicana-image, oicana-config) = setup(read-project-file)
@@ -46,7 +46,7 @@ development = { file = "company-logo.png" }
 The matching `main.typ`:
 
 ```typst
-#import "@preview/oicana:0.2.0": setup
+#import "@preview/oicana:0.2.1": setup
 
 #let read-project-file(path) = read(path, encoding: none)
 #let (input, oicana-image, oicana-config) = setup(read-project-file)
@@ -60,7 +60,7 @@ The image passed into the template with the input key "logo": \
 #oicana-image("logo")
 ```
 
-Previewing this in a Typst editor shows the contents of `data.json` and `company-logo.png`. Rendered through an Oicana integration (from C# code, say), the application's values are used instead.
+Previewing this in a Typst editor shows the contents of `data.json` and `company-logo.png`. Rendered through an Oicana integration (from C# code, say), the inputs your application passes in take their place.
 
 A Typst project that configures Oicana in its manifest and uses this package is what the documentation calls an *Oicana template*.
 
@@ -84,4 +84,4 @@ A Typst project that configures Oicana in its manifest and uses this package is 
 
 This package is available under the [MIT license](./LICENSE.md).
 
-Oicana itself is source-available under the [PolyForm Noncommercial License 1.0.0](https://github.com/oicana/oicana/blob/main/LICENSE.md). For commercial licensing details, see [the Oicana website](https://oicana.com/#pricing).
+Oicana itself is source-available under the [PolyForm Noncommercial License 1.0.0](https://github.com/oicana/oicana/blob/main/LICENSE.md): free for noncommercial use, with commercial use free for 30 days. For commercial licensing, see [pricing](https://oicana.com/#pricing).

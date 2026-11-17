@@ -1,4 +1,4 @@
-#import "@local/oicana:0.2.0": setup
+#import "@local/oicana:0.2.1": setup
 #import "sub/module.typ": sub-module
 
 #let read-project-file(path) = return read(path, encoding: none);

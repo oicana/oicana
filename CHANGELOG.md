@@ -15,7 +15,12 @@
 - Stricter handling of compilation modes: must be a `CompilationMode` variant
 
 ### Rust
+
 - The minimum supported Rust version is 1.92
+
+## Typst package v0.2.1
+
+- better error handling
 
 ## v0.10.0
 
