@@ -25,7 +25,6 @@ typst-layout = { workspace = true }
 
 dashmap = { workspace = true }
 log = { workspace = true }
-once_cell = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

@@ -6,7 +6,7 @@ Native PHP extension built with [ext-php-rs](https://github.com/extphprs/ext-php
 
 ## Building
 
-Requires Rust 1.88+ and PHP 8.3, 8.4, or 8.5 with development headers.
+Requires Rust 1.92+ and PHP 8.3, 8.4, or 8.5 with development headers.
 
 ```bash
 cargo build --release

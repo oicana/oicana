@@ -9,10 +9,11 @@ use std::collections::HashMap;
 use std::io::Cursor;
 use std::str::FromStr;
 use std::sync::atomic::{AtomicU8, AtomicUsize, Ordering};
-use std::sync::{Arc, PoisonError, RwLock, RwLockReadGuard, RwLockWriteGuard, TryLockError};
+use std::sync::{
+    Arc, LazyLock, PoisonError, RwLock, RwLockReadGuard, RwLockWriteGuard, TryLockError,
+};
 
 use dashmap::DashMap;
-use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use typst::foundations::Bytes;
@@ -219,9 +220,9 @@ type SharedWorld = Arc<RwLock<OicanaWorld<PackedTemplate>>>;
 // to clone the `Arc` out. Blocking lock order for everything else:
 // world `RwLock` -> `WARNINGS_CACHE`, at most one guard per map at a time.
 // Violations can deadlock integrations that call in from multiple threads.
-static WORLD_CACHE: Lazy<DashMap<String, SharedWorld>> = Lazy::new(DashMap::new);
-static DOCUMENT_CACHE: Lazy<DashMap<String, Arc<CachedDocument>>> = Lazy::new(DashMap::new);
-static WARNINGS_CACHE: Lazy<DashMap<String, Vec<Diagnostic>>> = Lazy::new(DashMap::new);
+static WORLD_CACHE: LazyLock<DashMap<String, SharedWorld>> = LazyLock::new(DashMap::new);
+static DOCUMENT_CACHE: LazyLock<DashMap<String, Arc<CachedDocument>>> = LazyLock::new(DashMap::new);
+static WARNINGS_CACHE: LazyLock<DashMap<String, Vec<Diagnostic>>> = LazyLock::new(DashMap::new);
 
 fn get_world(template_id: &str) -> Result<SharedWorld, FfiError> {
     WORLD_CACHE
@@ -296,7 +297,7 @@ pub fn configure_diagnostic_color(color: DiagnosticColor) {
 ///
 /// Registering fonts is a process-wide setting. Worlds snapshot the list when they are created, so
 /// fonts have to be registered before the templates that need them.
-static HOST_FONTS: Lazy<RwLock<Vec<FontSource>>> = Lazy::new(|| RwLock::new(Vec::new()));
+static HOST_FONTS: LazyLock<RwLock<Vec<FontSource>>> = LazyLock::new(|| RwLock::new(Vec::new()));
 
 fn host_fonts() -> Vec<FontSource> {
     HOST_FONTS

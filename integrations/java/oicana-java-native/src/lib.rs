@@ -103,6 +103,7 @@ fn compilation_mode_from_jint(mode: jint) -> oicana_ffi_core::CompilationMode {
     }
 }
 
+/// JNI implementation of `OicanaNative.registerTemplate`.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_oicana_OicanaNative_registerTemplate<'local>(
     mut unowned_env: EnvUnowned<'local>,
@@ -199,6 +200,7 @@ pub extern "system" fn Java_com_oicana_OicanaNative_exportTemplateOnce<'local>(
         .resolve::<jni::errors::ThrowRuntimeExAndDefault>()
 }
 
+/// JNI implementation of `OicanaNative.configureDiagnosticColor`.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_oicana_OicanaNative_configureDiagnosticColor<'local>(
     mut unowned_env: EnvUnowned<'local>,
@@ -295,6 +297,7 @@ pub extern "system" fn Java_com_oicana_OicanaNative_clearFonts<'local>(
         .resolve::<jni::errors::ThrowRuntimeExAndDefault>()
 }
 
+/// JNI implementation of `OicanaNative.compileTemplate`.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_oicana_OicanaNative_compileTemplate<'local>(
     mut unowned_env: EnvUnowned<'local>,
@@ -323,6 +326,7 @@ pub extern "system" fn Java_com_oicana_OicanaNative_compileTemplate<'local>(
         .resolve::<jni::errors::ThrowRuntimeExAndDefault>()
 }
 
+/// JNI implementation of `OicanaNative.exportDocument`.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_oicana_OicanaNative_exportDocument<'local>(
     mut unowned_env: EnvUnowned<'local>,
@@ -354,6 +358,7 @@ pub extern "system" fn Java_com_oicana_OicanaNative_exportDocument<'local>(
         .resolve::<jni::errors::ThrowRuntimeExAndDefault>()
 }
 
+/// JNI implementation of `OicanaNative.removeDocument`.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_oicana_OicanaNative_removeDocument<'local>(
     mut unowned_env: EnvUnowned<'local>,
@@ -385,6 +390,7 @@ pub extern "system" fn Java_com_oicana_OicanaNative_getWarnings<'local>(
         .resolve::<jni::errors::ThrowRuntimeExAndDefault>()
 }
 
+/// JNI implementation of `OicanaNative.removeWorld`.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_oicana_OicanaNative_removeWorld<'local>(
     mut unowned_env: EnvUnowned<'local>,
@@ -400,6 +406,7 @@ pub extern "system" fn Java_com_oicana_OicanaNative_removeWorld<'local>(
         .resolve::<jni::errors::ThrowRuntimeExAndDefault>()
 }
 
+/// JNI implementation of `OicanaNative.manifest`.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_oicana_OicanaNative_manifest<'local>(
     mut unowned_env: EnvUnowned<'local>,
@@ -415,6 +422,7 @@ pub extern "system" fn Java_com_oicana_OicanaNative_manifest<'local>(
         .resolve::<jni::errors::ThrowRuntimeExAndDefault>()
 }
 
+/// JNI implementation of `OicanaNative.documentPages`.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_oicana_OicanaNative_documentPages<'local>(
     mut unowned_env: EnvUnowned<'local>,
@@ -431,6 +439,7 @@ pub extern "system" fn Java_com_oicana_OicanaNative_documentPages<'local>(
         .resolve::<jni::errors::ThrowRuntimeExAndDefault>()
 }
 
+/// JNI implementation of `OicanaNative.getSource`.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_oicana_OicanaNative_getSource<'local>(
     mut unowned_env: EnvUnowned<'local>,
@@ -449,6 +458,7 @@ pub extern "system" fn Java_com_oicana_OicanaNative_getSource<'local>(
         .resolve::<jni::errors::ThrowRuntimeExAndDefault>()
 }
 
+/// JNI implementation of `OicanaNative.getFile`.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_oicana_OicanaNative_getFile<'local>(
     mut unowned_env: EnvUnowned<'local>,
@@ -467,6 +477,7 @@ pub extern "system" fn Java_com_oicana_OicanaNative_getFile<'local>(
         .resolve::<jni::errors::ThrowRuntimeExAndDefault>()
 }
 
+/// JNI implementation of `OicanaNative.setValidateInputs`.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_oicana_OicanaNative_setValidateInputs<'local>(
     mut unowned_env: EnvUnowned<'local>,
@@ -484,6 +495,7 @@ pub extern "system" fn Java_com_oicana_OicanaNative_setValidateInputs<'local>(
         .resolve::<jni::errors::ThrowRuntimeExAndDefault>()
 }
 
+/// JNI implementation of `OicanaNative.configureAutomaticCacheEviction`.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_oicana_OicanaNative_configureAutomaticCacheEviction<'local>(
     mut unowned_env: EnvUnowned<'local>,
@@ -503,6 +515,7 @@ pub extern "system" fn Java_com_oicana_OicanaNative_configureAutomaticCacheEvict
         .resolve::<jni::errors::ThrowRuntimeExAndDefault>()
 }
 
+/// JNI implementation of `OicanaNative.evictCache`.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_oicana_OicanaNative_evictCache<'local>(
     mut unowned_env: EnvUnowned<'local>,

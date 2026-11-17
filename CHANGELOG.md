@@ -9,9 +9,14 @@
 - `oicana test` removes the `.compare.png` image of a green snapshot test
 - `oicana test -u` creates missing directories for new snapshots
 - Fuzzing a JSON input with a schema that declares a draft other than 2020-12 fails loudly
+- Fuzzing supports schemas with an `$id`, `$anchor` references and integers beyond 2^53
 
 ### Python
 - Stricter handling of compilation modes: must be a `CompilationMode` variant
+
+### Rust
+
+- The minimum supported Rust version is 1.92
 
 ## Typst package v0.2.1
 
