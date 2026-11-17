@@ -1514,28 +1514,17 @@ jobs:
         run: |
           allowed_failures="validate-links audit-crates"
           failed=""
-          cancelled=""
           names='${{ toJson(needs) }}'
           while IFS= read -r job; do
             result=$(echo "$names" | jq -r --arg job "$job" '.[$job].result')
+            [[ "$result" == "success" ]] && continue
             if echo "$allowed_failures" | grep -qw "$job"; then
-              if [[ "$result" == "failure" || "$result" == "cancelled" ]]; then
-                echo "Allowed failure: $job ($result)"
-              fi
+              echo "Allowed failure: $job ($result)"
               continue
             fi
-            if [[ "$result" == "failure" ]]; then
-              failed="$failed\n  - $job"
-            elif [[ "$result" == "cancelled" ]]; then
-              cancelled="$cancelled\n  - $job"
-            fi
+            failed="$failed\n  - $job ($result)"
           done < <(echo "$names" | jq -r 'keys[]')
-          if [[ -n "$failed" || -n "$cancelled" ]]; then
-            if [[ -n "$failed" ]]; then
-              echo -e "Failed jobs:$failed"
-            fi
-            if [[ -n "$cancelled" ]]; then
-              echo -e "Cancelled jobs:$cancelled"
-            fi
+          if [[ -n "$failed" ]]; then
+            echo -e "Unsuccessful jobs:$failed"
             exit 1
           fi
